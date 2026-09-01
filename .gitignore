@@ -1,0 +1,10 @@
+.venv/
+sim_build/
+__pycache__/
+*.pyc
+*.vcd
+*.fst
+results.xml
+syn/lib/*.lib
+syn/reports/*.json
+.DS_Store
