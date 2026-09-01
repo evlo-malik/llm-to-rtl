@@ -7,4 +7,5 @@ __pycache__/
 results.xml
 syn/lib/*.lib
 syn/reports/*.json
+syn/reports/*.v
 .DS_Store

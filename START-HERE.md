@@ -117,3 +117,15 @@ surfer sim_build/dump.vcd
 - **A failing test is progress. A skipped test is debt.**
 - If a tool resists for more than an hour, say so and we drop to the fallback. The deliverable
   is a verified design, not a perfect toolchain.
+
+## Synthesis and timing (day 7 — working reference already in `_smoke/`)
+
+`_smoke/synth_smoke.ys` and `_smoke/sta_smoke.tcl` are a verified end-to-end example:
+Yosys maps to sky130 and writes a gate netlist, OpenSTA reads it and reports the critical path
+with real cell delays. On day 7 you point the same two scripts at `top.sv`. The plumbing is
+solved; the analysis — why F_max moves or doesn't as N grows — is the part that is yours.
+
+```bash
+yosys -q _smoke/synth_smoke.ys
+sta -no_splash -exit _smoke/sta_smoke.tcl
+```

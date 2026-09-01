@@ -6,6 +6,7 @@
 REPO="$( cd "$( dirname "${BASH_SOURCE[0]:-$0}" )" && pwd )"
 export PATH="$REPO/.venv/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 [ -d "$HOME/Developer/eda/oss-cad-suite/bin" ] && export PATH="$PATH:$HOME/Developer/eda/oss-cad-suite/bin"
+[ -d "$HOME/Developer/eda/OpenSTA/build" ] && export PATH="$PATH:$HOME/Developer/eda/OpenSTA/build"
 export REPO
 unset PYTHONHOME
 unset PYTHONPATH
