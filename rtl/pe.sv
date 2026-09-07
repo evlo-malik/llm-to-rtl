@@ -6,9 +6,11 @@ module pe(
     input logic signed [7:0] x_in, 
     input logic signed [31:0] psum_in,
     output logic signed [31:0] psum_out,
-    output logic signed [7:0] x_out
+    output logic signed [7:0] x_out,
+    output logic signed [7:0] w_out
 ); 
     logic signed [7:0] weight;
+    assign w_out = weight;
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
