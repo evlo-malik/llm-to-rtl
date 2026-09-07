@@ -18,6 +18,9 @@ generate
                 .clk(clk),
                 .rst_n(rst_n),
                 .load_w(load_w),
+                .x_in(j == 0 ? x_in[i] : x_wire[i][j-1]),
+                .w_in(i == 0 ? w_in[j] : w_wire[i-1][j]),
+                .psum_in( i == 0 ? 0 : result_wire[i-1][j]),
                 .x_out(x_wire[i][j]),
                 .w_out(w_wire[i][j]),
                 .psum_out(result_wire[i][j])
@@ -25,3 +28,11 @@ generate
         end
     end
 endgenerate
+
+generate
+    for (j = 0; j<N; j++) begin : out
+        assign result[j] = result_wire[N-1][j];
+    end
+endgenerate
+
+endmodule
