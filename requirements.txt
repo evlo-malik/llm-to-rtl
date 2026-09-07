@@ -1,0 +1,4 @@
+cocotb==2.1.0
+numpy==2.5.2
+pytest==9.1.1
+torch==2.14.0

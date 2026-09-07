@@ -9,3 +9,7 @@ syn/lib/*.lib
 syn/reports/*.json
 syn/reports/*.v
 .DS_Store
+
+# Reference designs for reading only; no licence file, must not ship in the public repo
+open-source/
+.surfer/
