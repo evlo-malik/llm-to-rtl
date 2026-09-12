@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import sys
@@ -18,6 +19,7 @@ from compiler.checkpoint import load_checkpoint
 from compiler.emit import emit_linear
 from compiler.gpt2 import fold_gpt2, calibrate, quantise_model
 from compiler.llama import fold_llama
+from compiler.planner import inspect_checkpoint
 from compiler.model_rtl import emit_model
 from compiler.quant import quant_weight
 
@@ -88,6 +90,18 @@ def compile_checkpoint(
         raise ValueError(f"output already exists: {out}; choose a new output directory")
     if bits not in (2, 4, 8):
         raise ValueError("bits must be 2, 4 or 8")
+    if max_coefficients < 0:
+        raise ValueError("max_coefficients must be nonnegative")
+    if not matrices_only:
+        plan = inspect_checkpoint(model_dir, context)
+        if not plan["decoder_adapter"]:
+            raise ValueError(
+                f"no decoder adapter for {plan['model_type']!r}; supported: gpt2, llama, qwen2, mistral"
+            )
+        if max_coefficients and plan["fixed_coefficients"] > max_coefficients:
+            raise ValueError(
+                f"{plan['fixed_coefficients']:,} coefficients exceed the emission limit {max_coefficients:,}; use --max-coefficients 0 to allow a larger circuit"
+            )
     cfg, state, hashes = load_checkpoint(model_dir)
     provenance_path = Path(model_dir) / "provenance.json"
     provenance = (
@@ -144,10 +158,23 @@ def compile_checkpoint(
         if not selected:
             raise ValueError(f"no matrix named {only!r}")
         size = sum(w.size for _, w, _, _ in selected)
+    elif matrices_only:
+        selected = []
+        names = set()
+        for tensor, value in sorted(state.items()):
+            if value.ndim != 2 or (only is not None and tensor != only):
+                continue
+            name = "tensor_" + re.sub(r"[^A-Za-z0-9_]", "_", tensor)
+            if name in names:
+                raise ValueError(f"RTL name collision for {tensor}")
+            names.add(name)
+            w, scale = quant_weight(value, bits)
+            selected.append((name, w, scale, tensor))
+        if not selected:
+            raise ValueError(f"no rank-2 tensor named {only!r}")
+        size = sum(w.size for _, w, _, _ in selected)
     else:
-        raise ValueError(
-            "unsupported model_type; full decoders: gpt2, llama, qwen2, mistral"
-        )
+        raise ValueError("unsupported decoder configuration")
     if max_coefficients and size > max_coefficients:
         raise ValueError(
             f"{size:,} coefficients exceed the emission limit {max_coefficients:,}; "
