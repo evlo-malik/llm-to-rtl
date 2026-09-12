@@ -14,10 +14,8 @@ __pycache__/
 # Reference repositories and downloaded models
 /open-source/
 /models/
-/model/data/input.txt
-/model/tinygpt/model.pt
 
-# Compiler output contains paths for the machine that generated it.
+# Generated circuits and test products
 /gen/
 
 # Simulation, synthesis and FPGA build products
