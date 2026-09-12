@@ -1,0 +1,60 @@
+{
+  "mapping_script": "strash; &get -n; &nf; &put",
+  "yosys": "Yosys 0.68+136 (git sha1 c30457480-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin25.5-clang++ 21.1.8)",
+  "baseline": "parallel programmable dot products; ternary uses sign/zero selection",
+  "tensor": "model.layers.0.self_attn.q_proj.weight",
+  "shape": [
+    64,
+    64
+  ],
+  "checkpoint_sha256": {
+    "config.json": "78bcaf99ff45e212096e6552bba0ba6f56877025f3e85584e3999582bc440d99",
+    "model.safetensors": "938471ca57ffa5ac6bce2f072fb797cc4027278a5e3707ac72e83be1a2cc0c9e"
+  },
+  "liberty_sha256": "8e78e14442062dba34d414fca6490b2f6b96038d4510d1438ca44fee31487135",
+  "liberty": "sky130_fd_sc_hd__tt_025C_1v80.lib",
+  "results": [
+    {
+      "bits": 8,
+      "kind": "fixed",
+      "cells": 363593,
+      "cell_area": 2896037.529606,
+      "rtl_sha256": "5a1194a7db4ee657bc6cd539d4f751f9dc71054b060be24de0ecda02018e68f2"
+    },
+    {
+      "bits": 8,
+      "kind": "programmable",
+      "cells": 1497112,
+      "cell_area": 18022271.036978,
+      "rtl_sha256": "728722073c82a2eec0709678bf1026e32b02a0f153e34ea1be5a958b555f8076"
+    },
+    {
+      "bits": 4,
+      "kind": "fixed",
+      "cells": 156212,
+      "cell_area": 1306585.619201,
+      "rtl_sha256": "d38b15de7fbea5d39054face674c1523b2cb62655da626b2cd99cd52e836c453"
+    },
+    {
+      "bits": 4,
+      "kind": "programmable",
+      "cells": 676538,
+      "cell_area": 8104163.785658,
+      "rtl_sha256": "d7ad50635fb2dd496acf55bc7ca529aa490faca9e0a1603d16ad9ecd418dc1aa"
+    },
+    {
+      "bits": 2,
+      "kind": "fixed",
+      "cells": 80759,
+      "cell_area": 667438.8768,
+      "rtl_sha256": "f9f9e9333d9f4cae24e11c954983be866bf9fb1db1492c8ca2cdcb6afb1c47a0"
+    },
+    {
+      "bits": 2,
+      "kind": "programmable",
+      "cells": 386379,
+      "cell_area": 4455291.728007,
+      "rtl_sha256": "f02666c11af4ba4b0300fc2e62c2c0c0d9b15c67b2dba985bd47bc80cc283695"
+    }
+  ]
+}
