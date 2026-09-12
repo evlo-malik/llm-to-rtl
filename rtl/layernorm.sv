@@ -1,5 +1,5 @@
 // Integer LayerNorm over a D-element int16 vector, no affine (gamma and beta are folded
-// into the Linear that follows, see compiler/golden_gpt.py). Output int8 with scale
+// into the Linear that follows, see compiler/gpt2.py). Output int8 with scale
 // 2^-4, i.e. 16 units per standard deviation. Step for step this is
 // quant.layernorm_int:
 //     mean = sum >> log2 D        c = h - mean        var = (sum c^2) >> log2 D
@@ -7,7 +7,7 @@
 //     y    = clip8( (c * inv + 2^19) >> 20 )
 // D int16 values stream in (low 16 bits of in_data), D int8 values stream out
 // sign-extended, roughly D + 50 cycles after the last input.
-module layernorm #(parameter int unsigned D = 64) (
+module layernorm #(parameter int unsigned D = 64, parameter int unsigned EPS_VAR = 0) (
     input  logic        clk,
     input  logic        rst_n,
     input  logic        in_valid,
@@ -90,7 +90,7 @@ module layernorm #(parameter int unsigned D = 64) (
                 SS: begin
                     if (rd_en_d) ss <= ss + 40'(c * c);
                     if (!rd_en && !rd_en_d) begin
-                        var_ <= 32'(ss >> LG);
+                        var_ <= 32'(ss >> LG) + EPS_VAR;
                         sq_start <= 1'b1;
                         state <= SQRT;
                     end

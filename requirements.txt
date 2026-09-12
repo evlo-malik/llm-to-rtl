@@ -2,5 +2,5 @@ cocotb==2.1.0
 numpy==2.5.2
 pytest==9.1.1
 torch==2.14.0
-safetensors>=0.6,<1
-matplotlib>=3.10,<4
+safetensors==0.8.0
+transformers==4.57.6

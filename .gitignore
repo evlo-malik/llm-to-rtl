@@ -26,6 +26,7 @@ logs/
 *.vcd
 *.fst
 results.xml
+*.result.xml
 *.fs
 /syn/lib/*.lib
 /syn/reports/*.v

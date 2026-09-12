@@ -95,7 +95,7 @@ LUT_STEP = 16         # index u = 16 * (logit gap); u = 255 is a gap of 15.9 nat
 RECIP_Q = 36          # softmax reciprocal: R = 2^36 // sum
 
 
-def layernorm_int(h):
+def layernorm_int(h, eps_var=0):
     """int16 vector -> int8 vector, normalised, scale 2^-4, no affine (folded away).
     Mirrors rtl/layernorm.sv step for step."""
     h = np.asarray(h, dtype=np.int64)
@@ -105,7 +105,7 @@ def layernorm_int(h):
     mean = int(h.sum()) >> lg
     c = h - mean
     var = int((c * c).sum()) >> lg
-    std = isqrt(var)
+    std = isqrt(var + int(eps_var))
     if std == 0:
         std = 1
     inv = (1 << LN_P) // std

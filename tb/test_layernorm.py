@@ -15,6 +15,7 @@ sys.path.insert(0, str(HERE.parent / "compiler"))
 from quant import layernorm_int              # noqa: E402
 
 D = int(os.getenv("D", "64"))
+EPS_VAR = int(os.getenv("EPS_VAR", "0"))
 BUILD = HERE.parent / "sim_build" / f"layernorm_D{D}"
 
 
@@ -22,7 +23,7 @@ def vectors(rng):
     yield np.zeros(D, dtype=np.int64)
     yield np.full(D, 1234, dtype=np.int64)
     v = np.zeros(D, dtype=np.int64); v[0] = 1; yield v
-    v = np.zeros(D, dtype=np.int64); v[3] = -1; yield v
+    v = np.zeros(D, dtype=np.int64); v[min(3, D-1)] = -1; yield v
     yield np.where(np.arange(D) % 2 == 0, 32767, -32768).astype(np.int64)
     yield np.full(D, -32768, dtype=np.int64)
     yield rng.integers(-5, 6, size=D, dtype=np.int64)
@@ -45,7 +46,7 @@ async def matches_python(dut):
     rng = np.random.default_rng(21)
     n_done = 0
     for h in vectors(rng):
-        exp = layernorm_int(h)
+        exp = layernorm_int(h, EPS_VAR)
         for i, v in enumerate(h):
             dut.in_valid.value = 1
             dut.in_data.value = int(v) & 0xFFFFFFFF
@@ -81,7 +82,7 @@ def run():
     rtl = HERE.parent / "rtl"
     runner = get_runner(os.getenv("SIM", "verilator"))
     runner.build(sources=[rtl / "isqrt.sv", rtl / "udiv.sv", rtl / "layernorm.sv"], hdl_toplevel="layernorm",
-                 parameters={"D": D}, waves=True, always=True, timescale=("1ns", "1ps"), build_dir=BUILD)
+                 parameters={"D": D, "EPS_VAR": EPS_VAR}, waves=True, always=True, timescale=("1ns", "1ps"), build_dir=BUILD)
     runner.test(hdl_toplevel="layernorm", test_module="test_layernorm", waves=True, build_dir=BUILD)
 
 
