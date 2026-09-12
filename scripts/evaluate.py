@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT))
 from compiler.bundle import load_bundle
 from compiler.checkpoint import load_checkpoint
 from compiler.compile import read_calibration
+from compiler.llama import fold_llama
 from compiler.gpt2 import fold_gpt2, FloatGPT, IntGPT
 
 
@@ -34,7 +35,11 @@ def main():
     if any(s in manifest["calibration_tokens"] for s in sequences):
         parser.error("evaluation sequence was used for calibration")
     q = load_bundle(args.output)
-    floating = FloatGPT(fold_gpt2(cfg, state, manifest["context"]))
+    floating = FloatGPT(
+        (fold_gpt2 if cfg["model_type"] == "gpt2" else fold_llama)(
+            cfg, state, manifest["context"]
+        )
+    )
     integer = IntGPT(q)
     agree = total = 0
     max_error = 0.0

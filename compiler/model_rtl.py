@@ -79,6 +79,8 @@ def emit_gelu(path, name, table):
 
 
 def emit_model(out, q):
+    from .rotary_rtl import emit_rotary, emit_gated
+
     out = Path(out)
     rtl = out / "rtl"
     rtl.mkdir(parents=True, exist_ok=True)
@@ -105,7 +107,20 @@ def emit_model(out, q):
         name = f"layer{l}_gelu"
         index[name] = len(units)
         units.append(name)
-        emit_gelu(rtl / f"{name}.sv", name, layer["gelu"])
+        if q.get("gated"):
+            emit_gated(
+                rtl / f"{name}.sv",
+                name,
+                layer["ffwd2"]["w"].shape[1],
+                layer["gelu"],
+                layer["gate_scale"],
+            )
+        else:
+            emit_gelu(rtl / f"{name}.sv", name, layer["gelu"])
+    if "rope_cos" in q:
+        index["fixed_rotary"] = len(units)
+        units.append("fixed_rotary")
+        emit_rotary(rtl / "fixed_rotary.sv", q)
     index["lm_head"] = len(units)
     units.append("lm_head")
     m = q["lm_head"]
@@ -120,14 +135,17 @@ def emit_model(out, q):
     ):
         shutil.copyfile(ROOT / "rtl" / name, rtl / name)
     d, v, t, layers = q["D"], q["V"], q["T"], q["L"]
-    inner = q["layers"][0]["ffwd1"]["w"].shape[0]
+    inner = q["layers"][0]["ffwd2"]["w"].shape[1]
+    first = inner * (2 if q.get("gated") else 1)
+    qkv_size = d + 2 * q.get("KH", q["H"]) * (d // q["H"])
     sizes = {
         "H": d,
         "X": d,
-        "QKV": 3 * d,
+        "QKV": qkv_size,
+        "ROT": qkv_size,
         "O": d,
         "TMP": d,
-        "F": inner,
+        "F": first,
         "G": inner,
         "LOGITS": v,
     }
@@ -164,13 +182,22 @@ def emit_model(out, q):
     op(1, dst="H", no=d)
     for l in range(layers):
         op(2, src="H", dst="X", ni=d, no=d)
-        linear(f"layer{l}_qkv", "X", "QKV", d, 3 * d)
-        op(4, src="QKV", dst="O", ni=3 * d, no=d, param=l)
+        linear(f"layer{l}_qkv", "X", "QKV", d, qkv_size)
+        if "rope_cos" in q:
+            linear("fixed_rotary", "QKV", "ROT", qkv_size, qkv_size)
+        op(
+            4,
+            src="ROT" if "rope_cos" in q else "QKV",
+            dst="O",
+            ni=qkv_size,
+            no=d,
+            param=l,
+        )
         linear(f"layer{l}_proj", "O", "TMP", d, d)
         op(5, src="TMP", dst="H", ni=d)
         op(2, src="H", dst="X", ni=d, no=d)
-        linear(f"layer{l}_ffwd1", "X", "F", d, inner)
-        linear(f"layer{l}_gelu", "F", "G", inner, inner)
+        linear(f"layer{l}_ffwd1", "X", "F", d, first)
+        linear(f"layer{l}_gelu", "F", "G", first, inner)
         linear(f"layer{l}_ffwd2", "G", "TMP", inner, d)
         op(5, src="TMP", dst="H", ni=d)
     op(2, src="H", dst="X", ni=d, no=d)
@@ -190,7 +217,7 @@ def emit_model(out, q):
     tw = (t - 1).bit_length()
     lw = max(1, (layers - 1).bit_length())
     lines = [
-        f"// GPT-2, {layers} layers, width {d}, context {t}. All checkpoint tensors are constants.",
+        f"// {q.get('architecture', 'gpt2')}, {layers} layers, width {d}, context {t}. All checkpoint tensors are constants.",
         f"module model_top(input logic clk,rst_n,clear,tok_valid, input logic [{vw - 1}:0] tok_in,",
         f"output logic done,busy,error,tok_ready, output logic [{pw - 1}:0] pos,",
         f"output logic logit_valid, output logic [31:0] logit_data, output logic [{vw - 1}:0] argmax);",
@@ -212,15 +239,17 @@ def emit_model(out, q):
         ".mv_in_valid(mv_in_valid),.mv_out_valid(mv_out_valid),.mv_busy(mv_busy),.mv_out_data(mv_out_data),.unit_in_data(unit_in_data));",
         f"fixed_embedding embed(.clk(clk),.rst_n(core_rst_n),.start(emb_start),.token(emb_token),.pos(pos[{tw - 1}:0]),",
         ".out_valid(emb_out_valid),.out_data(emb_out_data),.busy(emb_busy));",
-        f"layernorm #(.D({d}),.EPS_VAR({q['eps_var']})) norm(.clk(clk),.rst_n(core_rst_n),.in_valid(ln_in_valid),.in_data(unit_in_data),",
+        f"layernorm #(.D({d}),.EPS_VAR({q['eps_var']}),.RMS({int(q.get('norm') == 'rms')})) norm(.clk(clk),.rst_n(core_rst_n),.in_valid(ln_in_valid),.in_data(unit_in_data),",
         ".out_valid(ln_out_valid),.out_data(ln_out_data),.busy(ln_busy));",
-        f"attention #(.D({d}),.H({q['H']}),.T({t}),.L({layers}),.PARAMS({packed(attention, 44)}),.EXP_TABLE({packed(q['exp_lut'], 17)})) attn(",
+        f"attention #(.D({d}),.H({q['H']}),.KH({q.get('KH', q['H'])}),.WINDOWS({packed([x.get('window', t) for x in q['layers']], 11)}),.T({t}),.L({layers}),.PARAMS({packed(attention, 44)}),.EXP_TABLE({packed(q['exp_lut'], 17)})) attn(",
         f".clk(clk),.rst_n(core_rst_n),.layer(at_layer[{lw - 1}:0]),.pos(pos[{tw - 1}:0]),.in_valid(at_in_valid),.in_data(unit_in_data),",
         ".out_valid(at_out_valid),.out_data(at_out_data),.busy(at_busy));",
     ]
     for i, name in enumerate(units):
         lines += [
-            f"{name} u_{name}(.clk(clk),.rst_n(core_rst_n),.in_valid(mv_in_valid[{i}]),.in_data(unit_in_data[7:0]),",
+            f"{name} u_{name}("
+            + (f".pos(pos[{tw - 1}:0])," if name == "fixed_rotary" else "")
+            + f".clk(clk),.rst_n(core_rst_n),.in_valid(mv_in_valid[{i}]),.in_data(unit_in_data[7:0]),",
             f".out_valid(mv_out_valid[{i}]),.out_data(mv_out_data[{32 * i} +:32]),.busy(mv_busy[{i}]));",
         ]
     lines += ["endmodule", ""]

@@ -17,6 +17,7 @@ from compiler.bundle import save_bundle
 from compiler.checkpoint import load_checkpoint
 from compiler.emit import emit_linear
 from compiler.gpt2 import fold_gpt2, calibrate, quantise_model
+from compiler.llama import fold_llama
 from compiler.model_rtl import emit_model
 from compiler.quant import quant_weight
 
@@ -102,10 +103,15 @@ def compile_checkpoint(
     )
     prepared = None
     selected = None
-    if cfg.get("model_type") == "gpt2" and not matrices_only:
+    if (
+        cfg.get("model_type") in ("gpt2", "llama", "qwen2", "mistral")
+        and not matrices_only
+    ):
         if only:
             raise ValueError("--only requires --matrices-only")
-        f = fold_gpt2(cfg, state, context)
+        f = (fold_gpt2 if cfg["model_type"] == "gpt2" else fold_llama)(
+            cfg, state, context
+        )
         if calibration is None:
             calibration = Path(model_dir) / "calibration.json"
         windows = read_calibration(calibration, f["V"], context)
@@ -140,7 +146,7 @@ def compile_checkpoint(
         size = sum(w.size for _, w, _, _ in selected)
     else:
         raise ValueError(
-            "full models: GPT-2; matrix-only adapter: Llama with --matrices-only"
+            "unsupported model_type; full decoders: gpt2, llama, qwen2, mistral"
         )
     if max_coefficients and size > max_coefficients:
         raise ValueError(

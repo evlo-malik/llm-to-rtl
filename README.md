@@ -10,11 +10,12 @@ KV cache change during inference.
 
 | Input | Output |
 |---|---|
-| GPT-2 safetensors + config + calibration token IDs | Complete token-to-logits circuit |
+| GPT-2, Llama, Qwen2 or Mistral safetensors + config + calibration token IDs | Complete token-to-logits circuit |
 | Llama-family safetensors + config, `--matrices-only` | Individual fixed linear maps |
 
 INT8, INT4 and ternary matrix weights; INT8 linear inputs, INT16 residuals, INT32
-accumulators. GPT-2 uses integer LayerNorm, a GELU lookup and integer attention.
+accumulators. The decoder uses integer LayerNorm or RMSNorm, GELU or SwiGLU, rotary or learned
+positions, and causal or sliding-window attention with grouped KV heads.
 Changing a checkpoint requires recompiling the circuit. No training step.
 
 ## Run

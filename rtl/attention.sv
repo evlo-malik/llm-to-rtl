@@ -2,8 +2,10 @@
 module attention #(
     parameter int unsigned D = 64,
     parameter int unsigned H = 4,
+    parameter int unsigned KH = H,
     parameter int unsigned T = 32,
     parameter int unsigned L = 2,
+    parameter logic [11*L-1:0] WINDOWS = '0,
     parameter logic [44*L-1:0] PARAMS = '0,
     parameter logic [17*256-1:0] EXP_TABLE = '0
 ) (
@@ -20,12 +22,15 @@ module attention #(
     output logic        busy
 );
     localparam int unsigned HD  = D / H;
+    localparam int unsigned KD = KH * HD;
+    wire [10:0] window_size = WINDOWS[11*layer +:11];
+    wire [$clog2(T)-1:0] first_pos = (window_size != 0 && pos >= window_size) ? pos + 1 - window_size : 0;
     localparam int unsigned TW  = $clog2(T);
     localparam int unsigned DW  = $clog2(D);
     localparam int unsigned HW  = $clog2(H > 1 ? H : 2);
     localparam int unsigned CW  = $clog2(HD > 1 ? HD : 2);
-    localparam int unsigned KW  = $clog2(L * T * D);
-    localparam int unsigned IW  = $clog2(3 * D);
+    localparam int unsigned KW  = $clog2(L * T * KD);
+    localparam int unsigned IW  = $clog2(D + 2 * KD);
 
     logic [43:0] prm;
     logic [15:0] m0u, m0o;
@@ -38,8 +43,8 @@ module attention #(
 
     // ---- storage ----
     logic signed [7:0]  q_buf [D];
-    logic signed [7:0]  kc [L * T * D];
-    logic signed [7:0]  vc [L * T * D];
+    logic signed [7:0]  kc [L * T * KD];
+    logic signed [7:0]  vc [L * T * KD];
     logic signed [31:0] s_buf [T];
     logic        [16:0] e_buf [T];
     logic        [15:0] p_buf [T];
@@ -89,17 +94,17 @@ module attention #(
 
     // ---- RAM ports: one read per RAM per cycle, addresses from the sweep counters ----
     logic [KW-1:0] kv_addr;
-    assign kv_addr = KW'((32'(layer) * T + 32'(i)) * D + 32'(hh) * HD + 32'(c));
+    assign kv_addr = KW'((32'(layer) * T + 32'(i)) * KD + (32'(hh) / (H/KH)) * HD + 32'(c));
 
     always_ff @(posedge clk) begin
         // writes during FILL
         if (in_valid && state == FILL) begin
             if (fill_i < IW'(D))
                 q_buf[fill_i[DW-1:0]] <= in_data[7:0];
-            else if (fill_i < IW'(2 * D))
-                kc[KW'((32'(layer) * T + 32'(pos)) * D) + KW'(fill_i - IW'(D))] <= in_data[7:0];
+            else if (fill_i < IW'(D + KD))
+                kc[KW'((32'(layer) * T + 32'(pos)) * KD) + KW'(fill_i - IW'(D))] <= in_data[7:0];
             else
-                vc[KW'((32'(layer) * T + 32'(pos)) * D) + KW'(fill_i - IW'(2 * D))] <= in_data[7:0];
+                vc[KW'((32'(layer) * T + 32'(pos)) * KD) + KW'(fill_i - IW'(D + KD))] <= in_data[7:0];
         end
         // reads
         q_q <= q_buf[DW'(32'(hh) * HD + 32'(c))];
@@ -145,7 +150,7 @@ module attention #(
                         else c <= c + 1'b1;
                     end
                     PV: begin
-                        if (i == pos) begin i <= '0; c <= c + 1'b1; end
+                        if (i == pos) begin i <= first_pos; c <= c + 1'b1; end
                         else i <= i + 1'b1;
                     end
                     default: i <= i + 1'b1;
@@ -171,8 +176,8 @@ module attention #(
 
             case (state)
                 FILL: if (in_valid) begin
-                    if (fill_i == IW'(3 * D - 1)) begin
-                        fill_i <= '0; hh <= '0; i <= '0; c <= '0; iss <= 1'b1;
+                    if (fill_i == IW'(D + 2 * KD - 1)) begin
+                        fill_i <= '0; hh <= '0; i <= first_pos; c <= '0; iss <= 1'b1;
                         mac <= '0; first_s <= 1'b1; state <= SCORE;
                     end else fill_i <= fill_i + 1'b1;
                 end
@@ -186,7 +191,7 @@ module attention #(
                     end
                     if (d_last) begin
                         // smax lands this edge; start the softmax sweep next cycle
-                        i <= '0; c <= '0; iss <= 1'b1; esum <= '0; state <= SMAX;
+                        i <= first_pos; c <= '0; iss <= 1'b1; esum <= '0; state <= SMAX;
                     end
                 end
                 SMAX: begin
@@ -197,17 +202,17 @@ module attention #(
                 end
                 RECIP: if (dv_done) begin
                     recip <= dv_q;
-                    i <= '0; iss <= 1'b1; state <= PROB;
+                    i <= first_pos; iss <= 1'b1; state <= PROB;
                 end
                 PROB: if (d_v && d_last) begin
-                    i <= '0; c <= '0; iss <= 1'b1; mac <= '0; state <= PV;
+                    i <= first_pos; c <= '0; iss <= 1'b1; mac <= '0; state <= PV;
                 end
                 PV: begin
                     if (d_v) mac <= d_lasti ? '0 : mac + 32'(p_q) * 32'(v_q);
                     if (d_last) begin
                         if (hh == HW'(H - 1)) state <= DONE;
                         else begin
-                            hh <= hh + 1'b1; i <= '0; c <= '0; iss <= 1'b1; mac <= '0; first_s <= 1'b1;
+                            hh <= hh + 1'b1; i <= first_pos; c <= '0; iss <= 1'b1; mac <= '0; first_s <= 1'b1;
                             state <= SCORE;
                         end
                     end

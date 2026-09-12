@@ -7,7 +7,7 @@
 //     y    = clip8( (c * inv + 2^19) >> 20 )
 // D int16 values stream in (low 16 bits of in_data), D int8 values stream out
 // sign-extended, roughly D + 50 cycles after the last input.
-module layernorm #(parameter int unsigned D = 64, parameter int unsigned EPS_VAR = 0) (
+module layernorm #(parameter int unsigned D = 64, parameter int unsigned EPS_VAR = 0, parameter bit RMS = 0) (
     input  logic        clk,
     input  logic        rst_n,
     input  logic        in_valid,
@@ -83,7 +83,7 @@ module layernorm #(parameter int unsigned D = 64, parameter int unsigned EPS_VAR
                     else wr_i <= wr_i + 1'b1;
                 end
                 MEAN: begin
-                    mean <= 17'(sum >= 0 ? sum / D : -(((-sum) + D - 1) / D));
+                    mean <= RMS ? 17'sd0 : 17'(sum >= 0 ? sum / D : -(((-sum) + D - 1) / D));
                     ss <= '0; rd_i <= '0; rd_en <= 1'b1;
                     state <= SS;
                 end

@@ -18,7 +18,9 @@ def main():
     parser.add_argument("output", type=Path)
     parser.add_argument("--sim", choices=("icarus", "verilator"), default="verilator")
     parser.add_argument(
-        "--tokens", default="15496,995", help="comma-separated prompt token IDs"
+        "--tokens",
+        default=None,
+        help="comma-separated prompt token IDs; defaults to first calibration token",
     )
     parser.add_argument("--steps", type=int)
     args = parser.parse_args()
@@ -26,7 +28,11 @@ def main():
     manifest = json.loads((out / "manifest.json").read_text())
     if manifest["scope"] != "full_model":
         parser.error("output is not a complete model")
-    tokens = [int(t) for t in args.tokens.split(",")]
+    tokens = (
+        [int(t) for t in args.tokens.split(",")]
+        if args.tokens
+        else [manifest["calibration_tokens"][0][0]]
+    )
     steps = args.steps or manifest["context"]
     if (
         not tokens

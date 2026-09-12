@@ -97,14 +97,14 @@ LUT_STEP = 16  # index u = 16 * (logit gap); u = 255 is a gap of 15.9 nats
 RECIP_Q = 36  # softmax reciprocal: R = 2^36 // sum
 
 
-def layernorm_int(h, eps_var=0):
+def layernorm_int(h, eps_var=0, rms=False):
     """int16 vector -> int8 vector, normalised, scale 2^-4, no affine (folded away).
     Mirrors rtl/layernorm.sv step for step."""
     h = np.asarray(h, dtype=np.int64)
     d = len(h)
     if not 2 <= d <= 4096:
         raise ValueError("LayerNorm width must be in 2..4096")
-    mean = int(h.sum()) // d
+    mean = 0 if rms else int(h.sum()) // d
     c = h - mean
     var = int((c * c).sum()) // d
     std = isqrt(var + int(eps_var))

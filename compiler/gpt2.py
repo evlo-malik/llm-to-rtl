@@ -114,8 +114,8 @@ def fold_ln(w, b, gamma, beta):
 # ---------------------------------------------------------------- float reference
 
 
-def ln_norm(x, eps=1e-5):
-    mu = x.mean(-1, keepdims=True)
+def ln_norm(x, eps=1e-5, rms=False):
+    mu = 0 if rms else x.mean(-1, keepdims=True)
     var = ((x - mu) ** 2).mean(-1, keepdims=True)
     return (x - mu) / np.sqrt(var + eps)
 
@@ -138,38 +138,57 @@ class FloatGPT:
         rec("h", h)
         mask = np.tril(np.ones((T, T), dtype=bool))
         for l, lay in enumerate(f["layers"]):
-            x = ln_norm(h, f["eps"])
+            x = ln_norm(h, f["eps"], f.get("norm") == "rms")
             rec("ln", x)
             w, b = lay["qkv"]
             qkv = x @ w.T + b
-            q, k, v = qkv[:, :D], qkv[:, D : 2 * D], qkv[:, 2 * D :]
+            kd = f.get("KH", H) * hd
+            q, k, v = qkv[:, :D], qkv[:, D : D + kd], qkv[:, D + kd :]
+            if "rope_angles" in f:
+                q = rotary_float(q, f["rope_angles"][:T], hd)
+                k = rotary_float(k, f["rope_angles"][:T], hd)
             rec(f"q{l}", q)
             rec(f"k{l}", k)
             rec(f"v{l}", v)
             o = np.zeros((T, D))
             for hh in range(H):
                 sl = slice(hh * hd, (hh + 1) * hd)
-                s = q[:, sl] @ k[:, sl].T * hd**-0.5
-                s = np.where(mask, s, -np.inf)
+                ks = slice(
+                    (hh // (H // f.get("KH", H))) * hd,
+                    (hh // (H // f.get("KH", H)) + 1) * hd,
+                )
+                s = q[:, sl] @ k[:, ks].T * hd**-0.5
+                window = lay.get("window", T)
+                local_mask = mask & (
+                    np.arange(T)[None, :] > np.arange(T)[:, None] - window
+                )
+                s = np.where(local_mask, s, -np.inf)
                 s = s - s.max(-1, keepdims=True)
                 p = np.exp(s)
                 p = p / p.sum(-1, keepdims=True)
-                o[:, sl] = p @ v[:, sl]
+                o[:, sl] = p @ v[:, ks]
             rec(f"o{l}", o)
             w, b = lay["proj"]
             h = h + o @ w.T + b
             rec("h", h)
-            x = ln_norm(h, f["eps"])
+            x = ln_norm(h, f["eps"], f.get("norm") == "rms")
             rec("ln", x)
             w, b = lay["ffwd1"]
             pre = x @ w.T + b
             rec(f"pre{l}", pre)
-            ff = gelu(pre)
+            if f.get("gated"):
+                gate, up = np.split(pre, 2, axis=-1)
+                rec(f"gate{l}", gate)
+                rec(f"up{l}", up)
+                rec(f"silu{l}", silu(gate))
+                ff = silu(gate) * up
+            else:
+                ff = gelu(pre)
             rec(f"f{l}", ff)
             w, b = lay["ffwd2"]
             h = h + ff @ w.T + b
             rec("h", h)
-        x = ln_norm(h, f["eps"])
+        x = ln_norm(h, f["eps"], f.get("norm") == "rms")
         rec("ln", x)
         w, b = f["lm_head"]
         logits = x @ w.T + b
@@ -178,6 +197,27 @@ class FloatGPT:
 
 
 # ---------------------------------------------------------------- quantisation
+
+
+def silu(x):
+    return x / (1 + np.exp(-np.clip(x, -700, 700)))
+
+
+def rotary_float(x, angles, hd):
+    shape = x.shape
+    z = x.reshape(len(x), -1, hd)
+    a, b = np.split(z, 2, axis=-1)
+    c, s = np.cos(angles)[:, None, :], np.sin(angles)[:, None, :]
+    return np.concatenate((a * c - b * s, b * c + a * s), axis=-1).reshape(shape)
+
+
+def rotary_int(x, cos, sin, hd):
+    z = np.asarray(x).reshape(-1, hd)
+    a, b = np.split(z, 2, axis=-1)
+    return sat(
+        (np.concatenate((a * cos - b * sin, b * cos + a * sin), axis=-1) + 8192) >> 14,
+        8,
+    ).reshape(-1)
 
 
 def calibrate(f, token_windows):
@@ -218,8 +258,17 @@ def quantise_model(f, stats, bits):
         exp_lut=exp_lut(),
         layers=[],
     )
+    q.update(
+        architecture=f.get("architecture", "gpt2"),
+        norm=f.get("norm", "layer"),
+        gated=f.get("gated", False),
+        KH=f.get("KH", H),
+    )
+    if "rope_angles" in f:
+        q["rope_cos"] = np.rint(np.cos(f["rope_angles"]) * 16384).astype(np.int64)
+        q["rope_sin"] = np.rint(np.sin(f["rope_angles"]) * 16384).astype(np.int64)
     for l, lay in enumerate(f["layers"]):
-        ql = {}
+        ql = {"window": lay.get("window", f["T"])}
         # qkv: per-channel weights, per-tensor outputs so the dot products are consistent
         w, b = lay["qkv"]
         wq, sw = quant_weight(w, bits, per_channel=True)
@@ -228,7 +277,9 @@ def quantise_model(f, stats, bits):
             max(stats[f"k{l}"], 1e-9) / 127,
             max(stats[f"v{l}"], 1e-9) / 127,
         )
-        s_out = np.concatenate([np.full(D, s_q), np.full(D, s_k), np.full(D, s_v)])
+        s_out = np.concatenate(
+            [np.full(D, s_q), np.full(q["KH"] * hd, s_k), np.full(q["KH"] * hd, s_v)]
+        )
         ql["qkv"] = matvec_q(wq, sw, b, s_ln, s_out, out_bits=8)
         # attention: scores -> exp index, PV -> o
         s_z = s_q * s_k * hd**-0.5
@@ -246,8 +297,19 @@ def quantise_model(f, stats, bits):
         wq, sw = quant_weight(w, bits, per_channel=True)
         s_f = max(stats[f"f{l}"], 1e-9) / 127
         s_pre = max(stats[f"pre{l}"], 1e-9) / 127
-        ql["gelu"] = sat(np.rint(gelu(np.arange(-128, 128) * s_pre) / s_f), 8)
-        ql["ffwd1"] = matvec_q(wq, sw, b, s_ln, np.full(w.shape[0], s_pre), out_bits=8)
+        if q["gated"]:
+            sg = max(stats[f"gate{l}"], 1e-9) / 127
+            su = max(stats[f"up{l}"], 1e-9) / 127
+            sa = max(stats[f"silu{l}"], 1e-9) / 127
+            ql["gelu"] = sat(np.rint(silu(np.arange(-128, 128) * sg) / sa), 8)
+            ql["gate_scale"] = requant_params(sa * su / s_f)
+            scales = np.concatenate(
+                (np.full(w.shape[0] // 2, sg), np.full(w.shape[0] // 2, su))
+            )
+        else:
+            ql["gelu"] = sat(np.rint(gelu(np.arange(-128, 128) * s_pre) / s_f), 8)
+            scales = np.full(w.shape[0], s_pre)
+        ql["ffwd1"] = matvec_q(wq, sw, b, s_ln, scales, out_bits=8)
         w, b = lay["ffwd2"]
         wq, sw = quant_weight(w, bits, per_channel=True)
         ql["ffwd2"] = matvec_q(wq, sw, b, s_f, np.full(D, s_h), out_bits=16)
@@ -291,8 +353,12 @@ class IntGPT:
     def reset(self):
         q = self.q
         self.t = 0
-        self.kc = np.zeros((q["L"], q["T"], q["D"]), dtype=np.int64)
-        self.vc = np.zeros((q["L"], q["T"], q["D"]), dtype=np.int64)
+        self.kc = np.zeros(
+            (q["L"], q["T"], q.get("KH", q["H"]) * (q["D"] // q["H"])), dtype=np.int64
+        )
+        self.vc = np.zeros(
+            (q["L"], q["T"], q.get("KH", q["H"]) * (q["D"] // q["H"])), dtype=np.int64
+        )
 
     def linear(self, mv, x):
         acc = np.asarray(x, dtype=np.int64) @ mv["w"].T + mv["b"]
@@ -320,11 +386,15 @@ class IntGPT:
         h = sat(q["tok_emb"][token] + q["pos_emb"][t], 16)
         tr["h_emb"].append(h.copy())
         for l, lay in enumerate(q["layers"]):
-            x = layernorm_int(h, q["eps_var"])
+            x = layernorm_int(h, q["eps_var"], rms=q.get("norm") == "rms")
             tr["x_ln1"].append(x.copy())
             qkv = self.linear(lay["qkv"], x)
             tr["qkv"].append(qkv.copy())
-            qv, kv, vv = qkv[:D], qkv[D : 2 * D], qkv[2 * D :]
+            kd = q.get("KH", H) * hd
+            qv, kv, vv = qkv[:D], qkv[D : D + kd], qkv[D + kd :]
+            if "rope_cos" in q:
+                qv = rotary_int(qv, q["rope_cos"][t], q["rope_sin"][t], hd)
+                kv = rotary_int(kv, q["rope_cos"][t], q["rope_sin"][t], hd)
             self.kc[l, t] = kv
             self.vc[l, t] = vv
             o = np.zeros(D, dtype=np.int64)
@@ -332,20 +402,30 @@ class IntGPT:
             m0o, no = lay["attn"]["o"]
             for hh in range(H):
                 sl = slice(hh * hd, (hh + 1) * hd)
-                scores = self.kc[l, : t + 1, sl] @ qv[sl]  # int32
+                ks = slice(
+                    (hh // (H // q.get("KH", H))) * hd,
+                    (hh // (H // q.get("KH", H)) + 1) * hd,
+                )
+                begin = max(0, t + 1 - lay.get("window", q["T"]))
+                scores = self.kc[l, begin : t + 1, ks] @ qv[sl]  # int32
                 p = softmax_int(scores, m0u, nu, q["exp_lut"])  # uint16
-                acc = p @ self.vc[l, : t + 1, sl]  # < 2^28
+                acc = p @ self.vc[l, begin : t + 1, ks]  # < 2^28
                 o[sl] = requant(acc, m0o, no, 8)
             tr["o"].append(o.copy())
             h = sat(h + self.linear(lay["proj"], o), 16)
             tr["h_attn"].append(h.copy())
-            x = layernorm_int(h, q["eps_var"])
+            x = layernorm_int(h, q["eps_var"], rms=q.get("norm") == "rms")
             tr["x_ln2"].append(x.copy())
-            ff = lay["gelu"][self.linear(lay["ffwd1"], x) + 128]
+            pre = self.linear(lay["ffwd1"], x)
+            if q.get("gated"):
+                gate, up = np.split(pre, 2)
+                ff = requant(lay["gelu"][gate + 128] * up, *lay["gate_scale"], 8)
+            else:
+                ff = lay["gelu"][pre + 128]
             tr["f"].append(ff.copy())
             h = sat(h + self.linear(lay["ffwd2"], ff), 16)
             tr["h_ffwd"].append(h.copy())
-        x = layernorm_int(h, q["eps_var"])
+        x = layernorm_int(h, q["eps_var"], rms=q.get("norm") == "rms")
         tr["x_lnf"].append(x.copy())
         logits = self.linear(q["lm_head"], x)
         self.t += 1
