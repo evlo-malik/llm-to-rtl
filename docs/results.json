@@ -1,0 +1,379 @@
+{
+  "date": "2026-09-12",
+  "source_commit": "c222fef5248dba47d08ad35ae6b7d89f484db97d",
+  "regression": {
+    "command": "python -m pytest tests -q",
+    "passed": 25
+  },
+  "gpt2": {
+    "model_type": "gpt2",
+    "scope": "full_model",
+    "bits": 8,
+    "source": {
+      "model": "sshleifer/tiny-gpt2",
+      "revision": "5f91d94bd9cd7190a9f3216ff93cd1dd95f2c7be",
+      "sha256": {
+        "config.json": "77a9e9830c3abeba929f5c61e0e97c398f98b4481ad75516c0be5bf038b340b0",
+        "pytorch_model.bin": "b706b24034032bdfe765ded5ab6403d201d295a995b790cb24c74becca5c04e6",
+        "vocab.json": "03087853bc70c618b66e7c7a43e787d2db4c469416beac9a483e53dad1f72f27",
+        "merges.txt": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
+        "tokenizer_config.json": "5e04eb606e3a1583530a42e36c2a6b6615c86f34fe77e44d9ddeb43ff940931f",
+        "special_tokens_map.json": "c0b3c279b6ecdb71996a86ffb4d4ab94dfdb5df95f00bac9515688faef2ff5dd"
+      }
+    },
+    "checkpoint_sha256": {
+      "config.json": "77a9e9830c3abeba929f5c61e0e97c398f98b4481ad75516c0be5bf038b340b0",
+      "model.safetensors": "fa2c9a6c197dc9d0c55db9c1644a126c2f4c5d405ac9a2460dfebac380a67cee"
+    },
+    "rtl_sha256": {
+      "attention.sv": "3e7ba1285a1ea064d7370192e54f9c931c5007196e63670a03537c562efe21c5",
+      "fixed_embedding.sv": "e9d10338131257ff6d8310395550dc27a1f3a031d81f68cf0a5e1a9c6ff26360",
+      "isqrt.sv": "1ab4630c3ea9cea48cdaf3e662d67e72a8f37fe88d1d066d4d30d11b8acaeafb",
+      "layer0_ffwd1.sv": "d5770f9e9438f670227b414a2f4cb15e4e4c444baa6153b291b6f2d3526a61e6",
+      "layer0_ffwd2.sv": "a983174f11817255392a991a56fb6b017bb960aeb16797ff18533a58dc344509",
+      "layer0_gelu.sv": "bd12a80b715fdd2bf8a0458af7951b886c9952d9159c0520a901bcfe15757cef",
+      "layer0_proj.sv": "9935cf0d436bace6eebc7c05ca40fb0633d7356b1d241c18493d27b2a8f1743d",
+      "layer0_qkv.sv": "c9a6c2797dc56198aa2d2303caf33ed85cb2436c540ae7ccb537217da8b86201",
+      "layer1_ffwd1.sv": "72a6771c595ba122beb9b67657e454fd5c13ba4cfb216c7a01a6c716baf81d0d",
+      "layer1_ffwd2.sv": "8c97580745b6156b1ae71de7eb102d3ae0ca5e696ca412bb427c54f0c04c5284",
+      "layer1_gelu.sv": "96bf6043c22638f9e53b896fc42333d7dcebd63958c47a689c27ad03d9e89f16",
+      "layer1_proj.sv": "e135b8ec74f443d4123a40a237b669385ca6ffbe4d147be9fa0554a7b210631d",
+      "layer1_qkv.sv": "1f871980253d180b487629bc11b7c3a4bb7287b2b1305388b06b4a8f1c979dae",
+      "layernorm.sv": "4886e596d0db48a1216ad294dc26dd0b33289aaf2b6c71c72768f4a345ce7329",
+      "lm_head.sv": "83cf53be30518b0a3dae05b3c5c90470bfc9bc62fd3cb86c2f04bfe0f415c239",
+      "model_control.sv": "908a7967159b2aabe290c09f272c94e484cab54dac40baed642e83cf28248aad",
+      "model_top.sv": "414f22056d8e68575bd806767e318d029491ce7869c11db3632ce7c0d690c10a",
+      "udiv.sv": "0238e5ef9bcf85594150393f24773420c0677a06e6350b0f8f15733fda042f43"
+    },
+    "matrix_modules": [
+      {
+        "module": "layer0_qkv",
+        "inputs": 2,
+        "outputs": 6,
+        "coefficients": 12,
+        "nonzero": 12,
+        "constant_products": 9,
+        "csd_add_sub_terms": 21,
+        "weight_storage": "constant_logic",
+        "output_bits": 8
+      },
+      {
+        "module": "layer0_proj",
+        "inputs": 2,
+        "outputs": 2,
+        "coefficients": 4,
+        "nonzero": 4,
+        "constant_products": 3,
+        "csd_add_sub_terms": 6,
+        "weight_storage": "constant_logic",
+        "output_bits": 16
+      },
+      {
+        "module": "layer0_ffwd1",
+        "inputs": 2,
+        "outputs": 8,
+        "coefficients": 16,
+        "nonzero": 16,
+        "constant_products": 11,
+        "csd_add_sub_terms": 27,
+        "weight_storage": "constant_logic",
+        "output_bits": 8
+      },
+      {
+        "module": "layer0_ffwd2",
+        "inputs": 8,
+        "outputs": 2,
+        "coefficients": 16,
+        "nonzero": 16,
+        "constant_products": 16,
+        "csd_add_sub_terms": 36,
+        "weight_storage": "constant_logic",
+        "output_bits": 16
+      },
+      {
+        "module": "layer1_qkv",
+        "inputs": 2,
+        "outputs": 6,
+        "coefficients": 12,
+        "nonzero": 12,
+        "constant_products": 10,
+        "csd_add_sub_terms": 24,
+        "weight_storage": "constant_logic",
+        "output_bits": 8
+      },
+      {
+        "module": "layer1_proj",
+        "inputs": 2,
+        "outputs": 2,
+        "coefficients": 4,
+        "nonzero": 4,
+        "constant_products": 4,
+        "csd_add_sub_terms": 10,
+        "weight_storage": "constant_logic",
+        "output_bits": 16
+      },
+      {
+        "module": "layer1_ffwd1",
+        "inputs": 2,
+        "outputs": 8,
+        "coefficients": 16,
+        "nonzero": 16,
+        "constant_products": 12,
+        "csd_add_sub_terms": 33,
+        "weight_storage": "constant_logic",
+        "output_bits": 8
+      },
+      {
+        "module": "layer1_ffwd2",
+        "inputs": 8,
+        "outputs": 2,
+        "coefficients": 16,
+        "nonzero": 16,
+        "constant_products": 15,
+        "csd_add_sub_terms": 37,
+        "weight_storage": "constant_logic",
+        "output_bits": 16
+      },
+      {
+        "module": "lm_head",
+        "inputs": 2,
+        "outputs": 50257,
+        "coefficients": 100514,
+        "nonzero": 98986,
+        "constant_products": 405,
+        "csd_add_sub_terms": 1105,
+        "weight_storage": "constant_logic",
+        "output_bits": 32
+      }
+    ],
+    "synthesis": {
+      "passed": true,
+      "violations": [],
+      "yosys": "Yosys 0.68+136 (git sha1 c30457480-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin25.5-clang++ 21.1.8)",
+      "mutable_memory_bits": 2098472
+    },
+    "fixed_matrices_audited": 9,
+    "verification": [
+      {
+        "simulator": "Icarus Verilog",
+        "positions": 8,
+        "logits_compared": 402056,
+        "tokens": [
+          15496,
+          995,
+          16046,
+          16046,
+          16046,
+          16046,
+          16046,
+          16046
+        ],
+        "next_token": 16046,
+        "cycles_per_token": [
+          101200,
+          101216,
+          101232,
+          101248,
+          101264,
+          101280,
+          101296,
+          101312
+        ],
+        "clear_after_sequence": true,
+        "clear_during_token": true,
+        "invalid_token_checked": true,
+        "context_limit_checked": true,
+        "seconds": 83.723,
+        "passed": true
+      },
+      {
+        "simulator": "Verilator",
+        "positions": 8,
+        "logits_compared": 402056,
+        "tokens": [
+          15496,
+          995,
+          16046,
+          16046,
+          16046,
+          16046,
+          16046,
+          16046
+        ],
+        "next_token": 16046,
+        "cycles_per_token": [
+          101200,
+          101216,
+          101232,
+          101248,
+          101264,
+          101280,
+          101296,
+          101312
+        ],
+        "clear_after_sequence": true,
+        "clear_during_token": true,
+        "invalid_token_checked": true,
+        "context_limit_checked": true,
+        "seconds": 29.601,
+        "passed": true
+      }
+    ],
+    "evaluation": {
+      "sequences": 4,
+      "positions": 31,
+      "argmax_agreement": 1.0,
+      "max_abs_logit_error": 0.004215413342295249,
+      "mean_abs_logit_error": 0.00044435829402461526,
+      "evaluation_tokens": [
+        [
+          32,
+          2266,
+          21190,
+          29742,
+          2029,
+          262,
+          5897,
+          4675
+        ],
+        [
+          3347,
+          4721,
+          262,
+          1492,
+          290,
+          2067,
+          3555,
+          13
+        ],
+        [
+          2061,
+          4325,
+          618,
+          262,
+          6193,
+          2458,
+          30
+        ],
+        [
+          31334,
+          10087,
+          11406,
+          319,
+          262,
+          13510,
+          13990,
+          13
+        ]
+      ],
+      "checkpoint_sha256": {
+        "config.json": "77a9e9830c3abeba929f5c61e0e97c398f98b4481ad75516c0be5bf038b340b0",
+        "model.safetensors": "fa2c9a6c197dc9d0c55db9c1644a126c2f4c5d405ac9a2460dfebac380a67cee"
+      }
+    },
+    "calibration_tokens": [
+      [
+        15496,
+        995,
+        13,
+        770,
+        318,
+        257,
+        1402,
+        6890
+      ],
+      [
+        464,
+        2068,
+        7586,
+        21831,
+        18045,
+        625,
+        262,
+        16931
+      ],
+      [
+        30871,
+        290,
+        29964,
+        389,
+        5884,
+        416,
+        19474,
+        13
+      ],
+      [
+        32,
+        2746,
+        26334,
+        262,
+        1306,
+        11241,
+        287,
+        257
+      ],
+      [
+        3198,
+        734,
+        1115,
+        1440,
+        1936,
+        2237,
+        3598,
+        3624
+      ],
+      [
+        23421,
+        318,
+        257,
+        1748,
+        13,
+        6342,
+        318,
+        1194
+      ]
+    ]
+  },
+  "smollm2_key_projection": {
+    "model_type": "llama",
+    "scope": "matrices_only",
+    "bits": 4,
+    "source": null,
+    "checkpoint_sha256": {
+      "config.json": "1d556eab73b69c7f11f64c557a2f9c6f440bd4c6b89bb2584a6b498c92603843",
+      "model.safetensors": "80521b40281d6ce74e35c9282c22539e75aa0ac8578892b2a59955ef78d55da1"
+    },
+    "rtl_sha256": {
+      "layer0_k_proj.sv": "ce6a7804307a554ec6999885d8f3e4eab393e98533d0df969f0fdd477456d425"
+    },
+    "matrix_modules": [
+      {
+        "module": "layer0_k_proj",
+        "inputs": 576,
+        "outputs": 192,
+        "coefficients": 110592,
+        "nonzero": 20491,
+        "constant_products": 1740,
+        "csd_add_sub_terms": 2061,
+        "weight_storage": "constant_logic",
+        "output_bits": 32,
+        "source_tensor": "model.layers.0.self_attn.k_proj.weight"
+      }
+    ],
+    "synthesis": {
+      "passed": true,
+      "violations": [],
+      "yosys": "Yosys 0.68+136 (git sha1 c30457480-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin25.5-clang++ 21.1.8)",
+      "mutable_memory_bits": 4608
+    },
+    "fixed_matrices_audited": 1,
+    "verification": {
+      "passed": true,
+      "inputs": 576,
+      "outputs": 192,
+      "vectors": 6,
+      "logits_compared": 1152,
+      "simulator": "Verilator"
+    }
+  }
+}

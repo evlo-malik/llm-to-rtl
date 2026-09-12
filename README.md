@@ -64,4 +64,7 @@ not instantiate it.
 | `tests/`, `tb/` | Compiler tests and RTL comparisons |
 | `syn/` | Logic lowering and structural audit |
 
+Read [the circuit interface](docs/interface.md) for the data path and host protocol.
+Measured checks are recorded in [results](docs/results.md).
+
 MIT. See `LICENSE`.

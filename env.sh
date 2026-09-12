@@ -10,7 +10,7 @@ export PATH="$REPO/.venv/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export REPO
 unset PYTHONHOME
 unset PYTHONPATH
-echo "rtl-systolic-array env ready"
+echo "llm-to-rtl env ready"
 echo "  python:    $(command -v python3)  ($(python3 --version 2>&1))"
 echo "  verilator: $(verilator --version 2>/dev/null | head -1)"
 echo "  yosys:     $(yosys -V 2>/dev/null | cut -d' ' -f1-2)"
