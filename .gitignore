@@ -1,15 +1,36 @@
+# Local environments and caches
 .venv/
-sim_build/
+venv/
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+.surfer/
+.env
+.env.*
+!.env.example
+
+# Reference repositories and downloaded models
+/open-source/
+/models/
+/model/data/input.txt
+/model/tinygpt/model.pt
+
+# Compiler output contains paths for the machine that generated it.
+/gen/
+
+# Simulation, synthesis and FPGA build products
+sim_build/
+obj_dir/
+logs/
+*.log
 *.vcd
 *.fst
 results.xml
-syn/lib/*.lib
-syn/reports/*.json
-syn/reports/*.v
-.DS_Store
-
-# Reference designs for reading only; no licence file, must not ship in the public repo
-open-source/
-.surfer/
+*.fs
+/syn/lib/*.lib
+/syn/reports/*.v
+/syn/reports/*.tcl
+/syn/reports/*.txt
+/syn/reports/bitwidth/
