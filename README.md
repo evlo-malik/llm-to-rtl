@@ -1,4 +1,4 @@
-# rtl-systolic-array
+# llm-to-rtl
 
 Weights-in-silicon LLM inference: a compiler from Hugging Face safetensors to
 synthesisable SystemVerilog with the model's weights baked into weight-stationary
