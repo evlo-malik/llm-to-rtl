@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 from safetensors.torch import load_file
-from emit import const_array_sv, const_wrapper_sv
+from emit import emit_linear
 from quant import quant_weight
 
 
@@ -51,9 +51,7 @@ def main():
     manifest = {"weight_storage": "constant_logic", "bits": args.bits, "matrices": []}
     for m in matrices:
         name = m["name"]
-        core = "const_" + name
-        (args.out / (core + ".sv")).write_text(const_array_sv(core, m["w"]))
-        (args.out / (name + ".sv")).write_text(const_wrapper_sv(name, core, *m["w"].shape, m["b"]))
+        emit_linear(args.out / (name + ".sv"), name, m["w"].T, m["b"])
         manifest["matrices"].append({"name": name, "shape": list(m["w"].shape)})
     (args.out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
 
