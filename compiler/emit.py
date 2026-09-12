@@ -1,4 +1,5 @@
 """Emit fixed-coefficient datapaths. Selection happens after arithmetic."""
+
 from pathlib import Path
 import re
 
@@ -39,8 +40,10 @@ def balanced_sum(terms):
     if not terms:
         return "32'sd0"
     while len(terms) > 1:
-        terms = [f"({terms[i]} + {terms[i+1]})" if i + 1 < len(terms) else terms[i]
-                 for i in range(0, len(terms), 2)]
+        terms = [
+            f"({terms[i]} + {terms[i + 1]})" if i + 1 < len(terms) else terms[i]
+            for i in range(0, len(terms), 2)
+        ]
     return terms[0]
 
 
@@ -64,7 +67,11 @@ def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=3
     if w.min() < -128 or w.max() > 127:
         raise ValueError("weights must fit signed INT8")
     n, k = w.shape
-    b = np.zeros(n, dtype=np.int64) if bias is None else np.asarray(bias, dtype=np.int64)
+    b = (
+        np.zeros(n, dtype=np.int64)
+        if bias is None
+        else np.asarray(bias, dtype=np.int64)
+    )
     if b.shape != (n,):
         raise ValueError("bias shape differs from output size")
     if np.any(np.abs(b) + np.abs(w.astype(np.int64)).sum(axis=1) * 128 > 2**31 - 1):
@@ -75,23 +82,34 @@ def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=3
         raise ValueError("requantisation needs both multipliers and shifts")
     if m0 is not None:
         m0, shifts = np.asarray(m0), np.asarray(shifts)
-        if m0.shape != (n,) or shifts.shape != (n,) or np.any(m0 < 0) or np.any(m0 >= 65536) or np.any(shifts < 0) or np.any(shifts > 63):
+        if (
+            m0.shape != (n,)
+            or shifts.shape != (n,)
+            or np.any(m0 < 0)
+            or np.any(m0 >= 65536)
+            or np.any(shifts < 0)
+            or np.any(shifts > 63)
+        ):
             raise ValueError("invalid requantisation parameters")
     cw = max(1, (max(k, n) - 1).bit_length())
-    lines = [f"// Fixed {n}x{k} linear map. Coefficients are gates, not stored words.",
-             f"module {name} (input logic clk, rst_n, in_valid, input logic [7:0] in_data,",
-             "    output logic out_valid, output logic [31:0] out_data, output logic busy);",
-             f"    logic signed [7:0] x [0:{k-1}];",
-             f"    logic [{cw-1}:0] count;",
-             "    logic draining;",
-             "    assign busy = draining || (count != 0);"]
+    lines = [
+        f"// Fixed {n}x{k} linear map. Coefficients are gates, not stored words.",
+        f"module {name} (input logic clk, rst_n, in_valid, input logic [7:0] in_data,",
+        "    output logic out_valid, output logic [31:0] out_data, output logic busy);",
+        f"    logic signed [7:0] x [0:{k - 1}];",
+        f"    logic [{cw - 1}:0] count;",
+        "    logic draining;",
+        "    assign busy = draining || (count != 0);",
+    ]
     products = {}
     for i in range(k):
         lines += [f"    wire signed [31:0] x{i} = {{{{24{{x[{i}][7]}}}}, x[{i}]}};"]
         for value in sorted(set(int(v) for v in w[:, i]) - {0}):
             p = f"p{i}_{'n' if value < 0 else 'p'}{abs(value)}"
             products[i, value] = p
-            lines += [f"    wire signed [31:0] {p} = {multiply_constant(f'x{i}', value)};"]
+            lines += [
+                f"    wire signed [31:0] {p} = {multiply_constant(f'x{i}', value)};"
+            ]
     for j in range(n):
         terms = [products[i, int(v)] for i, v in enumerate(w[j]) if v]
         if b[j]:
@@ -100,44 +118,50 @@ def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=3
         if m0 is not None:
             shift = int(shifts[j])
             half = (1 << (shift - 1)) if shift else 0
-            lines += [f"    wire signed [63:0] e{j} = {{{{32{{a{j}[31]}}}}, a{j}}};",
-                      f"    wire signed [63:0] r{j} = ({multiply_constant(f'e{j}', int(m0[j]), 64)} + {literal(half, 64)}) >>> {shift};",
-                      f"    wire signed [31:0] y{j} = r{j} < {literal(-(1 << (out_bits-1)),64)} ? {literal(-(1 << (out_bits-1)))} :",
-                      f"        r{j} > {literal((1 << (out_bits-1))-1,64)} ? {literal((1 << (out_bits-1))-1)} : r{j}[31:0];"]
+            lines += [
+                f"    wire signed [63:0] e{j} = {{{{32{{a{j}[31]}}}}, a{j}}};",
+                f"    wire signed [63:0] r{j} = ({multiply_constant(f'e{j}', int(m0[j]), 64)} + {literal(half, 64)}) >>> {shift};",
+                f"    wire signed [31:0] y{j} = r{j} < {literal(-(1 << (out_bits - 1)), 64)} ? {literal(-(1 << (out_bits - 1)))} :",
+                f"        r{j} > {literal((1 << (out_bits - 1)) - 1, 64)} ? {literal((1 << (out_bits - 1)) - 1)} : r{j}[31:0];",
+            ]
         else:
             lines += [f"    wire signed [31:0] y{j} = a{j};"]
-    # Keep muxes in small blocks for simulator compilation. Every input is a result,
-    # never a weight feeding a shared multiplier.
-    banks = (n + 31) // 32
-    for bank in range(banks):
-        lines += [f"    logic [31:0] bank{bank};", "    always_comb begin", f"        bank{bank} = 32'd0;", "        case (count % 32)"]
-        for j in range(bank * 32, min(n, (bank + 1) * 32)):
-            lines += [f"            {j % 32}: bank{bank} = y{j};"]
-        lines += ["            default: ;", "        endcase", "    end"]
-    lines += ["    logic [31:0] selected;", "    always_comb begin", "        selected = 32'd0;", "        case (count / 32)"]
-    for bank in range(banks):
-        lines += [f"            {bank}: selected = bank{bank};"]
-    lines += ["            default: ;", "        endcase", "    end",
-              "    always_ff @(posedge clk) begin",
-              "        if (!rst_n) begin",
-              "            count <= 0; draining <= 0; out_valid <= 0; out_data <= 0;",
-              f"            for (integer i=0; i<{k}; i=i+1) x[i] <= 0;",
-              "        end else begin",
-              "            out_valid <= 0;",
-              "            if (draining) begin",
-              "                out_valid <= 1; out_data <= selected;",
-              f"                if (count == {n-1}) begin count <= 0; draining <= 0; end",
-              "                else count <= count + 1'b1;",
-              "            end else if (in_valid) begin",
-              "                x[count] <= in_data;",
-              f"                if (count == {k-1}) begin count <= 0; draining <= 1; end",
-              "                else count <= count + 1'b1;",
-              "            end",
-              "        end",
-              "    end",
-              "endmodule", ""]
+    # Separate result words avoid a million-bit packed bus in large vocabularies.
+    # These wires carry computed activations, never fetched coefficients.
+    lines += [f"    wire [31:0] results [0:{n - 1}];"]
+    for j in range(n):
+        lines += [f"    assign results[{j}] = y{j};"]
+    lines += [
+        "    wire [31:0] selected = results[count];",
+        "    always_ff @(posedge clk) begin",
+        "        if (!rst_n) begin",
+        "            count <= 0; draining <= 0; out_valid <= 0; out_data <= 0;",
+        f"            for (integer i=0; i<{k}; i=i+1) x[i] <= 0;",
+        "        end else begin",
+        "            out_valid <= 0;",
+        "            if (draining) begin",
+        "                out_valid <= 1; out_data <= selected;",
+        f"                if (count == {n - 1}) begin count <= 0; draining <= 0; end",
+        "                else count <= count + 1'b1;",
+        "            end else if (in_valid) begin",
+        "                x[count] <= in_data;",
+        f"                if (count == {k - 1}) begin count <= 0; draining <= 1; end",
+        "                else count <= count + 1'b1;",
+        "            end",
+        "        end",
+        "    end",
+        "endmodule",
+        "",
+    ]
     Path(path).write_text("\n".join(lines))
-    return {"module": name, "inputs": k, "outputs": n, "coefficients": int(w.size),
-            "nonzero": int(np.count_nonzero(w)), "constant_products": len(products),
-            "csd_add_sub_terms": sum(len(csd(v)) for _, v in products),
-            "weight_storage": "constant_logic", "output_bits": out_bits}
+    return {
+        "module": name,
+        "inputs": k,
+        "outputs": n,
+        "coefficients": int(w.size),
+        "nonzero": int(np.count_nonzero(w)),
+        "constant_products": len(products),
+        "csd_add_sub_terms": sum(len(csd(v)) for _, v in products),
+        "weight_storage": "constant_logic",
+        "output_bits": out_bits,
+    }

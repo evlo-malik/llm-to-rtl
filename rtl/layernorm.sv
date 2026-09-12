@@ -2,7 +2,7 @@
 // into the Linear that follows, see compiler/gpt2.py). Output int8 with scale
 // 2^-4, i.e. 16 units per standard deviation. Step for step this is
 // quant.layernorm_int:
-//     mean = sum >> log2 D        c = h - mean        var = (sum c^2) >> log2 D
+//     mean = floor(sum / D)        c = h - mean        var = floor(sum c^2 / D) + EPS_VAR
 //     stdv  = isqrt(var), at least 1        inv = 2^24 / stdv
 //     y    = clip8( (c * inv + 2^19) >> 20 )
 // D int16 values stream in (low 16 bits of in_data), D int8 values stream out
@@ -20,7 +20,7 @@ module layernorm #(parameter int unsigned D = 64, parameter int unsigned EPS_VAR
 );
     localparam int unsigned LG = $clog2(D);
     localparam int unsigned AW = LG > 0 ? LG : 1;
-    initial if ((1 << LG) != D) $error("layernorm: D must be a power of two");
+    initial if (D < 2 || D > 4096) $error("layernorm: D must be in 2..4096");
 
     typedef enum logic [2:0] {FILL, MEAN, SS, SQRT, DIV, OUT} state_t;
     state_t state;
@@ -30,10 +30,10 @@ module layernorm #(parameter int unsigned D = 64, parameter int unsigned EPS_VAR
     logic signed [15:0] rd_q;
     logic               rd_en, rd_en_d;      // address issued / data valid
 
-    logic signed [23:0] sum;
+    logic signed [31:0] sum;
     logic signed [16:0] mean;
     logic signed [17:0] c;
-    logic        [39:0] ss;
+    logic        [63:0] ss;
     logic        [31:0] var_;
     logic        [15:0] stdv;
     logic        [24:0] inv;
@@ -78,19 +78,19 @@ module layernorm #(parameter int unsigned D = 64, parameter int unsigned EPS_VAR
 
             case (state)
                 FILL: if (in_valid) begin
-                    sum <= sum + 24'(signed'(in_data[15:0]));
+                    sum <= sum + 32'(signed'(in_data[15:0]));
                     if (wr_i == AW'(D - 1)) begin wr_i <= '0; state <= MEAN; end
                     else wr_i <= wr_i + 1'b1;
                 end
                 MEAN: begin
-                    mean <= 17'(sum >>> LG);
+                    mean <= 17'(sum >= 0 ? sum / D : -(((-sum) + D - 1) / D));
                     ss <= '0; rd_i <= '0; rd_en <= 1'b1;
                     state <= SS;
                 end
                 SS: begin
-                    if (rd_en_d) ss <= ss + 40'(c * c);
+                    if (rd_en_d) ss <= ss + 64'(c * c);
                     if (!rd_en && !rd_en_d) begin
-                        var_ <= 32'(ss >> LG) + EPS_VAR;
+                        var_ <= 32'(ss / D) + EPS_VAR;
                         sq_start <= 1'b1;
                         state <= SQRT;
                     end

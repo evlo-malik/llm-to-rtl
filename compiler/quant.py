@@ -22,7 +22,9 @@ def quant_weight(w, bits, per_channel=True):
     else:
         s = np.max(np.abs(w), axis=1) / hi if per_channel else np.max(np.abs(w)) / hi
     s = np.where(s == 0, 1.0, s) if per_channel else (s if s != 0 else 1.0)
-    wq = np.clip(np.rint(w / (s[:, None] if per_channel else s)), lo, hi).astype(np.int64)
+    wq = np.clip(np.rint(w / (s[:, None] if per_channel else s)), lo, hi).astype(
+        np.int64
+    )
     return wq, s
 
 
@@ -32,7 +34,7 @@ def requant_params(r):
     if r <= 0:
         return 0, 0
     n = 15 - int(np.floor(np.log2(r)))
-    m0 = int(np.rint(r * 2.0 ** n))
+    m0 = int(np.rint(r * 2.0**n))
     if m0 >= 1 << 16:
         m0 >>= 1
         n -= 1
@@ -87,12 +89,12 @@ def isqrt(v):
     return r
 
 
-LN_SHIFT = 4          # LayerNorm output is int8 with scale 2^-4: 16 units per sigma
-LN_P = 24             # reciprocal precision: inv = 2^24 // std
-P_BITS = 15           # softmax probabilities are uint16 with scale 2^-15
-EXP_BITS = 16         # exp LUT entries are 2^16 * exp(-u/16), 17 bits wide
-LUT_STEP = 16         # index u = 16 * (logit gap); u = 255 is a gap of 15.9 nats
-RECIP_Q = 36          # softmax reciprocal: R = 2^36 // sum
+LN_SHIFT = 4  # LayerNorm output is int8 with scale 2^-4: 16 units per sigma
+LN_P = 24  # reciprocal precision: inv = 2^24 // std
+P_BITS = 15  # softmax probabilities are uint16 with scale 2^-15
+EXP_BITS = 16  # exp LUT entries are 2^16 * exp(-u/16), 17 bits wide
+LUT_STEP = 16  # index u = 16 * (logit gap); u = 255 is a gap of 15.9 nats
+RECIP_Q = 36  # softmax reciprocal: R = 2^36 // sum
 
 
 def layernorm_int(h, eps_var=0):
@@ -100,11 +102,11 @@ def layernorm_int(h, eps_var=0):
     Mirrors rtl/layernorm.sv step for step."""
     h = np.asarray(h, dtype=np.int64)
     d = len(h)
-    lg = d.bit_length() - 1
-    assert 1 << lg == d, "LayerNorm width must be a power of two (mean is a shift)"
-    mean = int(h.sum()) >> lg
+    if not 2 <= d <= 4096:
+        raise ValueError("LayerNorm width must be in 2..4096")
+    mean = int(h.sum()) // d
     c = h - mean
-    var = int((c * c).sum()) >> lg
+    var = int((c * c).sum()) // d
     std = isqrt(var + int(eps_var))
     if std == 0:
         std = 1
