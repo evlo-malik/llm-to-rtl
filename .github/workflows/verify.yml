@@ -29,3 +29,10 @@ jobs:
         run: |
           .venv/bin/python compiler/compile.py models/stories260k --out gen/ci-stories --context 8
           .venv/bin/python syn/synth.py gen/ci-stories --yosys "$(command -v yosys)"
+
+      - name: Audit high-range arithmetic and emitted coefficients
+        run: |
+          .venv/bin/python -c "from pathlib import Path; from tests.test_rotary_models import fixture; fixture(Path('gen/wide-model'), 'llama')"
+          .venv/bin/python compiler/compile.py gen/wide-model --out gen/ci-wide --activation-bits 16
+          .venv/bin/python syn/synth.py gen/ci-wide --yosys "$(command -v yosys)"
+          .venv/bin/python scripts/audit_coefficients.py gen/ci-stories

@@ -13,7 +13,7 @@ import numpy as np
 
 sys.path.insert(0, os.environ["SOURCE_ROOT"])
 from compiler.bundle import load_bundle
-from compiler.gpt2 import IntGPT
+from compiler.reference import IntDecoder
 
 
 async def tick(dut):
@@ -43,7 +43,7 @@ async def token(dut, value, vocab):
 async def pretrained_model(dut):
     out = Path(os.environ["MODEL_OUT"])
     q = load_bundle(out)
-    ref = IntGPT(q)
+    ref = IntDecoder(q)
     prompt = json.loads(os.environ["VERIFY_TOKENS"])
     steps = int(os.environ["VERIFY_STEPS"])
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())

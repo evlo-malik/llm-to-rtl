@@ -2,8 +2,9 @@
 # Symmetric, no zero points: real = scale * q. Per-output-channel weights unless a
 # consumer needs one scale across channels (q and k for the dot product, lm_head for
 # the argmax). Requantisation is Jacob et al. 2018 style: q_y = (acc * M0) >> n with
-# M0 a 16-bit fixed-point multiplier in [2^15, 2^16).
+# M0 normally has 16 significant bits. Large expansion ratios use an integer M0.
 import numpy as np
+import math
 
 
 def qrange(bits):
@@ -29,12 +30,16 @@ def quant_weight(w, bits, per_channel=True):
 
 
 def requant_params(r):
-    """Real multiplier r > 0 -> (M0, n) with r ~= M0 * 2^-n, M0 in [2^15, 2^16)."""
+    """Positive scale -> integer multiplier and nonnegative shift; product fits INT64."""
     r = float(r)
     if r <= 0:
         return 0, 0
     n = 15 - int(np.floor(np.log2(r)))
     m0 = int(np.rint(r * 2.0**n))
+    if n < 0:
+        if not np.isfinite(r) or r >= 2**31:
+            raise ValueError("requant multiplier exceeds INT31")
+        return int(round(r)), 0
     if m0 >= 1 << 16:
         m0 >>= 1
         n -= 1
@@ -44,7 +49,7 @@ def requant_params(r):
 
 
 def requant(acc, m0, n, bits, relu=False):
-    """Integer requantise, exactly as rtl/requant.sv does it: multiply by M0, add half,
+    """Integer requantise: multiply by M0, add half,
     arithmetic shift right n, clip to `bits`. acc, m0, n may be arrays."""
     acc = np.asarray(acc, dtype=np.int64)
     m0 = np.asarray(m0, dtype=np.int64)
@@ -71,24 +76,6 @@ def sat(x, bits):
     return np.clip(np.asarray(x, dtype=np.int64), lo, hi)
 
 
-def isqrt(v):
-    """Floor square root of a non-negative int, bit by bit, same loop as rtl/isqrt.sv."""
-    v = int(v)
-    assert v >= 0
-    r = 0
-    bit = 1 << 30
-    while bit > v:
-        bit >>= 2
-    while bit:
-        if v >= r + bit:
-            v -= r + bit
-            r = (r >> 1) + bit
-        else:
-            r >>= 1
-        bit >>= 2
-    return r
-
-
 LN_SHIFT = 4  # LayerNorm output is int8 with scale 2^-4: 16 units per sigma
 LN_P = 24  # reciprocal precision: inv = 2^24 // std
 P_BITS = 15  # softmax probabilities are uint16 with scale 2^-15
@@ -97,7 +84,7 @@ LUT_STEP = 16  # index u = 16 * (logit gap); u = 255 is a gap of 15.9 nats
 RECIP_Q = 36  # softmax reciprocal: R = 2^36 // sum
 
 
-def layernorm_int(h, eps_var=0, rms=False):
+def layernorm_int(h, eps_var=0, rms=False, out_bits=8, shift=LN_SHIFT, precision=LN_P):
     """int16 vector -> int8 vector, normalised, scale 2^-4, no affine (folded away).
     Mirrors rtl/layernorm.sv step for step."""
     h = np.asarray(h, dtype=np.int64)
@@ -106,13 +93,13 @@ def layernorm_int(h, eps_var=0, rms=False):
         raise ValueError("LayerNorm width must be in 2..4096")
     mean = 0 if rms else int(h.sum()) // d
     c = h - mean
-    var = int((c * c).sum()) // d
-    std = isqrt(var + int(eps_var))
+    var = sum(int(x) * int(x) for x in c) // d
+    std = math.isqrt(var + int(eps_var))
     if std == 0:
         std = 1
-    inv = (1 << LN_P) // std
-    y = (c * inv + (1 << (LN_P - LN_SHIFT - 1))) >> (LN_P - LN_SHIFT)
-    return sat(y, 8)
+    inv = (1 << precision) // std
+    y = (c * inv + (1 << (precision - shift - 1))) >> (precision - shift)
+    return sat(y, out_bits)
 
 
 def exp_lut():

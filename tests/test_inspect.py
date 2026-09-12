@@ -48,6 +48,17 @@ def test_compile_command(tmp_path):
     import subprocess
     import sys
     from pathlib import Path
-    fixture_checkpoint(tmp_path / 'model')
+
+    fixture_checkpoint(tmp_path / "model")
     root = Path(__file__).resolve().parents[1]
-    subprocess.run([sys.executable, str(root / 'compiler/compile.py'), str(tmp_path / 'model'), '--out', str(tmp_path / 'out')], check=True, capture_output=True)
+    subprocess.run(
+        [
+            sys.executable,
+            str(root / "compiler/compile.py"),
+            str(tmp_path / "model"),
+            "--out",
+            str(tmp_path / "out"),
+        ],
+        check=True,
+        capture_output=True,
+    )

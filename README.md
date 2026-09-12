@@ -1,71 +1,98 @@
 # llm-to-rtl
 
-Pretrained checkpoint → fixed-weight SystemVerilog.
+[![Verification](https://github.com/evlo-malik/llm-to-rtl/actions/workflows/verify.yml/badge.svg)](https://github.com/evlo-malik/llm-to-rtl/actions/workflows/verify.yml)
 
-Each linear map becomes constant shift/add logic. Weights are never loaded into a
-shared array. Embeddings become fixed decoders. Only activations, counters and the
-KV cache change during inference.
+Compile a **pretrained transformer checkpoint into a model-specific RTL circuit**.
+Matrix weights become constant shift/add networks. Embeddings become fixed logic.
+The circuit accepts token IDs and produces next-token scores. No training and no
+weight fetches into a shared compute array during inference.
 
-## Supported
+This explores the model-specific hardware direction described by
+[Taalas](https://taalas.com/the-path-to-ubiquitous-ai/) and
+[Lamb Labs](https://lamb-labs.com/). It is an independent RTL compiler; those
+companies' physical implementations and performance results are not reproduced here.
 
-| Input | Output |
-|---|---|
-| GPT-2, Llama, Qwen2 or Mistral safetensors + config + calibration token IDs | Complete token-to-logits circuit |
-| Llama-family safetensors + config, `--matrices-only` | Individual fixed linear maps |
+## Demonstrated result
 
-INT8, INT4 and ternary matrix weights; INT8 linear inputs, INT16 residuals, INT32
-accumulators. The decoder uses integer LayerNorm or RMSNorm, GELU or SwiGLU, rotary or learned
-positions, and causal or sliding-window attention with grouped KV heads.
-Changing a checkpoint requires recompiling the circuit. No training step.
+The pretrained Stories260K circuit generated this in Verilator:
 
-## Run
+> Once upon a time, there was a little girl named Lily. She loved to play outside
+> in the park. One day, she went to the park to play.
+
+All 32,768 logits over 64 token positions matched the integer reference. Icarus
+independently checked eight positions. The complete circuit passed synthesis and
+the weight-storage audit. [Results and reproduction commands](docs/results.md).
+
+## Run a pretrained model
+
+Install Python 3.13 and the [EDA tools](docs/setup.md), then:
 
 ```sh
 python3.13 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-source env.sh
-python scripts/fetch_example.py
-python compiler/compile.py models/tiny-gpt2 --out gen/gpt2 --context 8
-python scripts/verify.py gen/gpt2 --sim icarus
+source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/fetch_stories.py
+python compiler/compile.py models/stories260k --out gen/stories --context 64
+python scripts/generate.py gen/stories --model-dir models/stories260k \
+  --prompt '' --new-tokens 64
 ```
 
-The example is `sshleifer/tiny-gpt2`, pinned to a checkpoint revision. It retains
-all 50,257 vocabulary entries and both layers. Its hidden width is only 2; use it
-for compiler verification, not language-quality claims. Checkpoints and generated
-files are ignored by Git.
+This downloads a pinned **Stories260K** checkpoint: five Llama-style layers,
+width 64, eight query heads, four KV heads, and the complete 512-token vocabulary.
+The generation command runs RTL simulation and checks every logit against the
+integer reference. The first build takes several minutes.
 
-Calibration reads token IDs to choose numerical scales; it does not update weights.
-The output directory must be new. Use `--max-coefficients 0` to lift the default
-2-million-coefficient emission guard. Larger models produce larger circuits;
-there is no weight-memory fallback.
+The compiler also accepts your own local `config.json` and single or sharded
+safetensors checkpoint. Supply representative token sequences in `calibration.json`;
+calibration chooses numerical scales without changing the trained weights.
 
-## Verify
+## Supported computation
+
+| Decoder | Implemented operations | Verification |
+|---|---|---|
+| GPT-2 | LayerNorm, learned positions, GELU, multi-head attention | Pretrained tiny GPT-2 and wider fixtures |
+| Llama | RMSNorm, RoPE, SwiGLU, grouped-query attention | Pretrained Stories260K and fixtures |
+| Qwen2 / Qwen2.5 | Q/K/V biases, grouped-query and mixed-window attention | Fixtures compared with Transformers and RTL |
+| Mistral | Grouped-query, sliding-window attention | Fixtures compared with Transformers and RTL |
+
+Matrix weights support INT8, INT4 and ternary. Calibration selects 8-bit or 16-bit
+activation paths; the latter uses 32-bit residuals to preserve large dynamic ranges.
+Configuration limits are listed in [architecture support](docs/architecture.md).
+
+**A file format does not specify a computation.** Safetensors contains named arrays;
+`config.json` selects the model architecture. A new architecture needs an adapter
+and any missing operations. `--matrices-only` can emit individual rank-2 tensors
+from other architectures, but does not produce complete model inference.
+
+## Output and checks
+
+`gen/stories/rtl/` is the generated hardware. `model_top.sv` connects the fixed
+projections, normalisation, positional operations, attention, activation buffers
+and controller. `manifest.json` records source hashes, numerical settings and the
+operation schedule. Software reference files are used only for verification.
 
 ```sh
 python -m pytest tests -q
-python scripts/verify.py gen/gpt2 --sim verilator
-python syn/synth.py gen/gpt2
+python scripts/verify.py gen/stories --sim icarus --steps 8
+python scripts/evaluate.py models/stories260k gen/stories
+python syn/synth.py gen/stories
+python compiler/planner.py models/stories260k --context 64
 ```
 
-Simulation requires Icarus or Verilator. Synthesis requires Yosys with `read_slang`.
-The synthesis flow maps read-only tables to gates and audits fixed linear maps for
-weight memories and runtime multipliers. Mutable activation memories are allowed.
+See [measured results](docs/results.md), [the host interface](docs/interface.md),
+and [the compiler structure](docs/architecture.md).
 
-No FPGA fit, physical timing, power or manufactured-silicon claim. The original
-programmable systolic array remains in `rtl/` as a reference; compiled models do
-not instantiate it.
+## Hardware scope
 
-## Layout
+All fixed linear maps exist spatially; input-dependent activations and the KV cache
+use writable memory. A larger model requires more logic and routing. The planner
+reports coefficient count before compilation; the default emission guard is two
+million coefficients. `--max-coefficients 0` removes that guard, not physical limits.
 
-| Path | Contents |
-|---|---|
-| `compiler/` | Checkpoint loader, GPT-2 lowering, integer reference, RTL emitters |
-| `rtl/` | Dynamic attention, normalisation, controller, reference array |
-| `scripts/` | Pinned example download and model verification |
-| `tests/`, `tb/` | Compiler tests and RTL comparisons |
-| `syn/` | Logic lowering and structural audit |
+The repository verifies RTL and supports logic synthesis. FPGA integration,
+place-and-route, timing closure and power measurement remain hardware work.
+Your original programmable systolic array is retained as a reference; emitted
+models do not instantiate it. Downloaded models, generated circuits and
+`open-source/` are ignored by Git.
 
-Read [the circuit interface](docs/interface.md) for the data path and host protocol.
-Measured checks are recorded in [results](docs/results.md).
-
-MIT. See `LICENSE`.
+MIT. See [LICENSE](LICENSE).

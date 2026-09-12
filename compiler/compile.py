@@ -17,7 +17,8 @@ import numpy as np
 from compiler.bundle import save_bundle
 from compiler.checkpoint import load_checkpoint
 from compiler.emit import emit_linear
-from compiler.gpt2 import fold_gpt2, calibrate, quantise_model
+from compiler.gpt2 import fold_gpt2
+from compiler.reference import calibrate, quantise_model
 from compiler.llama import fold_llama
 from compiler.planner import inspect_checkpoint
 from compiler.model_rtl import emit_model
@@ -84,6 +85,7 @@ def compile_checkpoint(
     matrices_only=False,
     only=None,
     max_coefficients=2_000_000,
+    activation_bits=None,
 ):
     out = Path(out)
     if out.exists():
@@ -130,15 +132,23 @@ def compile_checkpoint(
             calibration = Path(model_dir) / "calibration.json"
         windows = read_calibration(calibration, f["V"], context)
         stats = calibrate(f, windows)
-        prepared = quantise_model(f, stats, bits)
+        if activation_bits is None:
+            embedding_rms = max(float(np.sqrt(np.mean(f["tok_emb"] ** 2))), 1e-9)
+            activation_bits = (
+                16 if stats["ln"] > 7.5 or stats["h"] / embedding_rms > 1000 else 8
+            )
+            manifest["activation_precision_selection"] = "calibration ranges"
+        else:
+            manifest["activation_precision_selection"] = "explicit"
+        prepared = quantise_model(f, stats, bits, activation_bits)
         prepared["stats"] = stats
-        if not 0 <= prepared["eps_var"] < 2**31:
+        if not 0 <= prepared["eps_var"] < 2 ** (63 if activation_bits == 16 else 31):
             raise ValueError(
                 "normalisation epsilon is outside the supported integer range"
             )
         size = (
             f["tok_emb"].size
-            + f["pos_emb"].size
+            + (f["pos_emb"].size if cfg["model_type"] == "gpt2" else 0)
             + sum(
                 layer[m][0].size
                 for layer in f["layers"]
@@ -220,6 +230,13 @@ def main():
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--bits", type=int, choices=(8, 4, 2), default=8)
     parser.add_argument("--context", type=int, default=8)
+    parser.add_argument(
+        "--activation-bits",
+        type=int,
+        choices=(8, 16),
+        default=None,
+        help="default: select from calibration ranges; 16 uses INT32 residuals",
+    )
     parser.add_argument(
         "--calibration", type=Path, help="JSON token-ID sequences; no training"
     )

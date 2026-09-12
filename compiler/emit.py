@@ -53,8 +53,10 @@ def identifier(name):
     return name
 
 
-def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=32):
-    """weights[out,in], signed INT8 input; ordered signed INT32 output stream.
+def emit_linear(
+    path, name, weights, bias=None, m0=None, shifts=None, out_bits=32, in_bits=8
+):
+    """weights[out,in], signed INT8/INT16 input; ordered signed INT32 output stream.
 
     All output dot products exist spatially. A mux serialises their results.
     There is no coefficient address, read port, array or runtime multiplier.
@@ -66,6 +68,8 @@ def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=3
         raise ValueError("weights must be a nonempty integer matrix")
     if w.min() < -128 or w.max() > 127:
         raise ValueError("weights must fit signed INT8")
+    if in_bits not in (8, 16):
+        raise ValueError("in_bits must be 8 or 16")
     n, k = w.shape
     b = (
         np.zeros(n, dtype=np.int64)
@@ -74,7 +78,10 @@ def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=3
     )
     if b.shape != (n,):
         raise ValueError("bias shape differs from output size")
-    if np.any(np.abs(b) + np.abs(w.astype(np.int64)).sum(axis=1) * 128 > 2**31 - 1):
+    if np.any(
+        np.abs(b) + np.abs(w.astype(np.int64)).sum(axis=1) * (1 << (in_bits - 1))
+        > 2**31 - 1
+    ):
         raise ValueError("dot product may overflow INT32")
     if out_bits not in (8, 16, 32):
         raise ValueError("out_bits must be 8, 16 or 32")
@@ -86,7 +93,7 @@ def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=3
             m0.shape != (n,)
             or shifts.shape != (n,)
             or np.any(m0 < 0)
-            or np.any(m0 >= 65536)
+            or np.any(m0 >= 2**31)
             or np.any(shifts < 0)
             or np.any(shifts > 63)
         ):
@@ -94,16 +101,18 @@ def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=3
     cw = max(1, (max(k, n) - 1).bit_length())
     lines = [
         f"// Fixed {n}x{k} linear map. Coefficients are gates, not stored words.",
-        f"module {name} (input logic clk, rst_n, in_valid, input logic [7:0] in_data,",
+        f"module {name} (input logic clk, rst_n, in_valid, input logic [{in_bits - 1}:0] in_data,",
         "    output logic out_valid, output logic [31:0] out_data, output logic busy);",
-        f"    logic signed [7:0] x [0:{k - 1}];",
+        f"    logic signed [{in_bits - 1}:0] x [0:{k - 1}];",
         f"    logic [{cw - 1}:0] count;",
         "    logic draining;",
         "    assign busy = draining || (count != 0);",
     ]
     products = {}
     for i in range(k):
-        lines += [f"    wire signed [31:0] x{i} = {{{{24{{x[{i}][7]}}}}, x[{i}]}};"]
+        lines += [
+            f"    wire signed [31:0] x{i} = {{{{{32 - in_bits}{{x[{i}][{in_bits - 1}]}}}}, x[{i}]}};"
+        ]
         for value in sorted(set(int(v) for v in w[:, i]) - {0}):
             p = f"p{i}_{'n' if value < 0 else 'p'}{abs(value)}"
             products[i, value] = p
@@ -174,4 +183,5 @@ def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=3
         "csd_add_sub_terms": sum(len(csd(v)) for _, v in products),
         "weight_storage": "constant_logic",
         "output_bits": out_bits,
+        "input_bits": in_bits,
     }

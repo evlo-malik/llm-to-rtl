@@ -44,18 +44,19 @@ endmodule
     path.write_text(text)
 
 
-def emit_gated(path, name, inner, table, scale):
+def emit_gated(path, name, inner, table, scale, bits=8, lut_shift=0):
     m, shift = map(int, scale)
     half = (1 << (shift - 1)) if shift else 0
-    path.write_text(f"""module {name}(input logic clk,rst_n,in_valid, input logic [7:0] in_data,
+    path.write_text(f"""module {name}(input logic clk,rst_n,in_valid, input logic [{bits - 1}:0] in_data,
     output logic out_valid,busy, output logic [31:0] out_data);
-    localparam logic [2047:0] SILU={packed(table, 8)};
-    logic signed [7:0] x[0:{2 * inner - 1}];
+    localparam logic [{len(table) * bits - 1}:0] SILU={packed(table, bits)};
+    logic signed [{bits - 1}:0] x[0:{2 * inner - 1}];
     integer index;
     logic draining;
     assign busy=draining || index!=0;
-    wire [7:0] address=x[index]+8'd128;
-    wire signed [7:0] gate=$signed(SILU[8*address +:8]);
+    wire signed [{bits + 1}:0] biased={bits + 2}'($signed(x[index]))+{bits + 2}'sd{(1 << (bits - 1)) + ((1 << (lut_shift - 1)) if lut_shift else 0)};
+    wire [{bits - lut_shift - 1}:0] address=biased >= {bits + 2}'sd{1 << bits} ? {bits - lut_shift}'d{len(table) - 1} : biased >> {lut_shift};
+    wire signed [{bits - 1}:0] gate=$signed(SILU[{bits}*address +:{bits}]);
     wire signed [31:0] product=32'(gate)*32'($signed(x[index+{inner}]));
     wire signed [63:0] wide=64'(product);
     wire signed [63:0] value=({multiply_constant("wide", m, 64)} + {literal(half, 64)}) >>> {shift};
@@ -64,7 +65,7 @@ def emit_gated(path, name, inner, table, scale):
         else begin
             out_valid<=0;
             if(draining) begin
-                out_valid<=1; out_data<=value < -128 ? -32'sd128 : value > 127 ? 32'sd127 : value[31:0];
+                out_valid<=1; out_data<=value < {literal(-(1 << (bits - 1)), 64)} ? {literal(-(1 << (bits - 1)))} : value > {literal((1 << (bits - 1)) - 1, 64)} ? {literal((1 << (bits - 1)) - 1)} : value[31:0];
                 if(index=={inner - 1}) begin index<=0; draining<=0; end
                 else index<=index+1;
             end else if(in_valid) begin

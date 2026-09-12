@@ -1,6 +1,6 @@
 // Fixed operation schedule. The scratchpad stores activations only.
 module model_control #(
-    parameter integer NMV=1, MEM_WORDS=1024, PROG_LEN=32, VOCAB=256, CTX=8,
+    parameter integer RESIDUAL_BITS=16, NMV=1, MEM_WORDS=1024, PROG_LEN=32, VOCAB=256, CTX=8,
     parameter logic [164*PROG_LEN-1:0] PROGRAM='0
 )(
     input logic clk, rst_n, tok_valid,
@@ -80,7 +80,7 @@ module model_control #(
         endcase
     end
     function automatic [31:0] sat16(input logic signed [32:0] x);
-        sat16=x < -33'sd32768 ? -32'sd32768 : x > 33'sd32767 ? 32'sd32767 : x[31:0];
+        sat16=x < -(33'sd1 <<< (RESIDUAL_BITS-1)) ? 32'(-(33'sd1 <<< (RESIDUAL_BITS-1))) : x > ((33'sd1 <<< (RESIDUAL_BITS-1))-1) ? 32'((33'sd1 <<< (RESIDUAL_BITS-1))-1) : x[31:0];
     endfunction
     always_ff @(posedge clk) begin
         if(!rst_n) begin

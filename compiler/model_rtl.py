@@ -9,43 +9,46 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def packed(values, width):
-    word = 0
-    for i, value in enumerate(values):
-        word |= (int(value) & ((1 << width) - 1)) << (width * i)
-    return f"{len(values) * width}'h{word:x}"
+    # Bound literal length for Icarus's lexer as well as synthesis frontends.
+    values = list(values)
+    stride = max(1, 2048 // width)
+    words = []
+    for begin in range(0, len(values), stride):
+        chunk = values[begin : begin + stride]
+        word = sum(
+            (int(value) & ((1 << width) - 1)) << (width * i)
+            for i, value in enumerate(chunk)
+        )
+        words.append(f"{len(chunk) * width}'h{word:x}")
+    return words[0] if len(words) == 1 else "{\n" + ",\n".join(reversed(words)) + "\n}"
 
 
 def emit_embedding(path, q):
     d, v, t = q["D"], q["V"], q["T"]
-    vw = max(1, (v - 1).bit_length())
-    tw = max(1, (t - 1).bit_length())
+    rb = q.get("residual_bits", 16)
+    vw, tw = max(1, (v - 1).bit_length()), max(1, (t - 1).bit_length())
+    lo, hi = -(1 << (rb - 1)), (1 << (rb - 1)) - 1
     lines = [
         f"module fixed_embedding(input logic clk,rst_n,start, input logic [{vw - 1}:0] token,",
         f"input logic [{tw - 1}:0] pos, output logic out_valid,busy, output logic [31:0] out_data);",
-        f"logic [{16 * d - 1}:0] token_value, position_value, held_token, held_position;",
+        f"logic [{rb * d - 1}:0] token_value, position_value, held_token, held_position;",
         "integer column;",
-        "always_comb begin",
-        "token_value='0;",
-        "case(token)",
+        "always_comb begin token_value='0; case(token)",
     ]
-    # Literal decode, not an initialised RAM. The physical flow maps this truth table
-    # to gates; no coefficient word is read into a multiplier.
     for i, row in enumerate(q["tok_emb"]):
-        lines.append(f"{vw}'d{i}: token_value={packed(row, 16)};")
-    lines += ["default: ;", "endcase", "position_value='0;", "case(pos)"]
+        lines.append(f"{vw}'d{i}: token_value={packed(row, rb)};")
+    lines += ["default: ; endcase position_value='0; case(pos)"]
     for i, row in enumerate(q["pos_emb"]):
-        lines.append(f"{tw}'d{i}: position_value={packed(row, 16)};")
+        lines.append(f"{tw}'d{i}: position_value={packed(row, rb)};")
     lines += [
-        "default: ;",
-        "endcase",
-        "end",
-        "wire signed [16:0] total=17'($signed(held_token[16*column +:16])) + 17'($signed(held_position[16*column +:16]));",
+        "default: ; endcase end",
+        f"wire signed [{rb}:0] total={rb + 1}'($signed(held_token[{rb}*column +:{rb}])) + {rb + 1}'($signed(held_position[{rb}*column +:{rb}]));",
         "always_ff @(posedge clk) begin",
         "if(!rst_n) begin busy<=0; out_valid<=0; out_data<=0; column<=0; held_token<=0; held_position<=0; end",
         "else begin out_valid<=0;",
         "if(start && !busy) begin held_token<=token_value; held_position<=position_value; column<=0; busy<=1; end",
         "else if(busy) begin",
-        "out_valid<=1; out_data<=total < -17'sd32768 ? -32'sd32768 : total > 17'sd32767 ? 32'sd32767 : 32'(total);",
+        f"out_valid<=1; out_data<=total < {literal(lo, rb + 1)} ? {literal(lo)} : total > {literal(hi, rb + 1)} ? {literal(hi)} : 32'(total);",
         f"if(column=={d - 1}) busy<=0; else column<=column+1;",
         "end end end endmodule",
         "",
@@ -53,22 +56,21 @@ def emit_embedding(path, q):
     Path(path).write_text("\n".join(lines))
 
 
-def emit_gelu(path, name, table):
+def emit_gelu(path, name, table, bits=8, lut_shift=0):
+    half = (1 << (lut_shift - 1)) if lut_shift else 0
+    aw = bits - lut_shift
     lines = [
-        f"module {name}(input logic clk,rst_n,in_valid, input logic [7:0] in_data,",
+        f"module {name}(input logic clk,rst_n,in_valid, input logic [{bits - 1}:0] in_data,",
         "output logic out_valid,busy, output logic [31:0] out_data);",
-        "assign busy=1'b0;",
-        "logic [31:0] value;",
-        "always_comb begin",
-        "value=32'd0;",
-        "case(in_data)",
+        "assign busy=1'b0; logic [31:0] value;",
+        f"wire signed [{bits + 1}:0] biased={bits + 2}'($signed(in_data))+{bits + 2}'sd{(1 << (bits - 1)) + half};",
+        f"wire [{aw - 1}:0] address=biased >= {bits + 2}'sd{1 << bits} ? {aw}'d{len(table) - 1} : biased >> {lut_shift};",
+        "always_comb begin value=0; case(address)",
     ]
     for i, value in enumerate(table):
-        lines.append(f"8'd{(i - 128) & 255}: value={literal(value)};")
+        lines.append(f"{aw}'d{i}: value={literal(value)};")
     lines += [
-        "default: ;",
-        "endcase",
-        "end",
+        "default: ; endcase end",
         "always_ff @(posedge clk) begin",
         "if(!rst_n) begin out_valid<=0; out_data<=0; end",
         "else begin out_valid<=in_valid; out_data<=value; end",
@@ -86,14 +88,16 @@ def emit_model(out, q):
     rtl.mkdir(parents=True, exist_ok=True)
     units = []
     index = {}
+    input_bits = {}
     stats = []
     for l, layer in enumerate(q["layers"]):
         for kind in ("qkv", "proj", "ffwd1", "ffwd2"):
             name = f"layer{l}_{kind}"
             m = layer[kind]
+            input_bits[name] = m.get("in_bits", 8)
             index[name] = len(units)
             units.append(name)
-            kwargs = {} if m["out_bits"] == 32 else dict(m0=m["m0"], shifts=m["n"])
+            kwargs = dict(m0=m["m0"], shifts=m["n"]) if "m0" in m else {}
             stats.append(
                 emit_linear(
                     rtl / f"{name}.sv",
@@ -101,10 +105,12 @@ def emit_model(out, q):
                     m["w"],
                     m["b"],
                     out_bits=m["out_bits"],
+                    in_bits=m.get("in_bits", 8),
                     **kwargs,
                 )
             )
         name = f"layer{l}_gelu"
+        input_bits[name] = q.get("activation_bits", 8)
         index[name] = len(units)
         units.append(name)
         if q.get("gated"):
@@ -114,17 +120,31 @@ def emit_model(out, q):
                 layer["ffwd2"]["w"].shape[1],
                 layer["gelu"],
                 layer["gate_scale"],
+                bits=q.get("activation_bits", 8),
+                lut_shift=layer.get("lut_shift", 0),
             )
         else:
-            emit_gelu(rtl / f"{name}.sv", name, layer["gelu"])
+            emit_gelu(
+                rtl / f"{name}.sv",
+                name,
+                layer["gelu"],
+                q.get("activation_bits", 8),
+                layer.get("lut_shift", 0),
+            )
     if "rope_cos" in q:
+        input_bits["fixed_rotary"] = 8
         index["fixed_rotary"] = len(units)
         units.append("fixed_rotary")
         emit_rotary(rtl / "fixed_rotary.sv", q)
+    input_bits["lm_head"] = q["lm_head"].get("in_bits", 8)
     index["lm_head"] = len(units)
     units.append("lm_head")
     m = q["lm_head"]
-    stats.append(emit_linear(rtl / "lm_head.sv", "lm_head", m["w"], m["b"]))
+    stats.append(
+        emit_linear(
+            rtl / "lm_head.sv", "lm_head", m["w"], m["b"], in_bits=m.get("in_bits", 8)
+        )
+    )
     emit_embedding(rtl / "fixed_embedding.sv", q)
     for name in (
         "model_control.sv",
@@ -134,6 +154,9 @@ def emit_model(out, q):
         "attention.sv",
     ):
         shutil.copyfile(ROOT / "rtl" / name, rtl / name)
+    if q.get("residual_bits", 16) == 32:
+        for name in ("normalise_wide.sv", "isqrt_wide.sv"):
+            shutil.copyfile(ROOT / "rtl" / name, rtl / name)
     d, v, t, layers = q["D"], q["V"], q["T"], q["L"]
     inner = q["layers"][0]["ffwd2"]["w"].shape[1]
     first = inner * (2 if q.get("gated") else 1)
@@ -229,7 +252,7 @@ def emit_model(out, q):
         "wire [15:0] at_layer;",
         f"wire [{nmv - 1}:0] mv_in_valid,mv_out_valid,mv_busy;",
         f"wire [{32 * nmv - 1}:0] mv_out_data;",
-        f"model_control #(.NMV({nmv}),.MEM_WORDS({mem_words}),.PROG_LEN({nprog}),.VOCAB({v}),.CTX({t}),",
+        f"model_control #(.RESIDUAL_BITS({q.get('residual_bits', 16)}),.NMV({nmv}),.MEM_WORDS({mem_words}),.PROG_LEN({nprog}),.VOCAB({v}),.CTX({t}),",
         f".PROGRAM({packed(program, 164)})) control(",
         ".clk(clk),.rst_n(core_rst_n),.tok_valid(tok_valid && !clear),.tok_in(tok_in),.done(done),.busy(busy),.error(error),.pos(pos),",
         ".logit_valid(logit_valid),.logit_data(logit_data),.argmax(argmax),",
@@ -239,7 +262,7 @@ def emit_model(out, q):
         ".mv_in_valid(mv_in_valid),.mv_out_valid(mv_out_valid),.mv_busy(mv_busy),.mv_out_data(mv_out_data),.unit_in_data(unit_in_data));",
         f"fixed_embedding embed(.clk(clk),.rst_n(core_rst_n),.start(emb_start),.token(emb_token),.pos(pos[{tw - 1}:0]),",
         ".out_valid(emb_out_valid),.out_data(emb_out_data),.busy(emb_busy));",
-        f"layernorm #(.D({d}),.EPS_VAR({q['eps_var']}),.RMS({int(q.get('norm') == 'rms')})) norm(.clk(clk),.rst_n(core_rst_n),.in_valid(ln_in_valid),.in_data(unit_in_data),",
+        f"{'normalise_wide' if q.get('residual_bits', 16) == 32 else 'layernorm'} #(.D({d}),.EPS_VAR(64'd{q['eps_var']}),.RMS({int(q.get('norm') == 'rms')})) norm(.clk(clk),.rst_n(core_rst_n),.in_valid(ln_in_valid),.in_data(unit_in_data),",
         ".out_valid(ln_out_valid),.out_data(ln_out_data),.busy(ln_busy));",
         f"attention #(.D({d}),.H({q['H']}),.KH({q.get('KH', q['H'])}),.WINDOWS({packed([x.get('window', t) for x in q['layers']], 11)}),.T({t}),.L({layers}),.PARAMS({packed(attention, 44)}),.EXP_TABLE({packed(q['exp_lut'], 17)})) attn(",
         f".clk(clk),.rst_n(core_rst_n),.layer(at_layer[{lw - 1}:0]),.pos(pos[{tw - 1}:0]),.in_valid(at_in_valid),.in_data(unit_in_data),",
@@ -249,7 +272,7 @@ def emit_model(out, q):
         lines += [
             f"{name} u_{name}("
             + (f".pos(pos[{tw - 1}:0])," if name == "fixed_rotary" else "")
-            + f".clk(clk),.rst_n(core_rst_n),.in_valid(mv_in_valid[{i}]),.in_data(unit_in_data[7:0]),",
+            + f".clk(clk),.rst_n(core_rst_n),.in_valid(mv_in_valid[{i}]),.in_data(unit_in_data[{input_bits[name] - 1}:0]),",
             f".out_valid(mv_out_valid[{i}]),.out_data(mv_out_data[{32 * i} +:32]),.busy(mv_busy[{i}]));",
         ]
     lines += ["endmodule", ""]
@@ -264,5 +287,7 @@ def emit_model(out, q):
         context=t,
         vocab=v,
         width=d,
+        activation_bits=q.get("activation_bits", 8),
+        residual_bits=q.get("residual_bits", 16),
         layers=layers,
     )

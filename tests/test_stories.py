@@ -6,7 +6,7 @@ import pytest
 import torch
 from compiler.checkpoint import load_checkpoint
 from compiler.llama import fold_llama
-from compiler.gpt2 import FloatGPT
+from compiler.reference import FloatDecoder
 
 MODEL = Path(__file__).resolve().parents[1] / "models/stories260k"
 
@@ -29,7 +29,7 @@ def test_pretrained_llama_against_upstream():
     with torch.no_grad():
         expected = model(torch.tensor([tokens])).logits[0].numpy()
     np.testing.assert_allclose(
-        FloatGPT(fold_llama(cfg, state, 8)).forward(tokens),
+        FloatDecoder(fold_llama(cfg, state, 8)).forward(tokens),
         expected,
         rtol=2e-4,
         atol=2e-5,

@@ -26,9 +26,11 @@ Token and position → fixed embedding decoder → transformer layers → final
 normalisation → fixed vocabulary projection → logits.
 
 Each layer applies normalisation, fixed Q/K/V projections, causal attention,
-a fixed output projection and a residual add, followed by normalisation, two
-fixed feed-forward projections with GELU between them, and another residual add.
-Attention stores previous keys and values. These depend on the input tokens.
+a fixed output projection and a residual add, followed by normalisation, fixed feed-forward projections with GELU (GPT-2) or
+SwiGLU (rotary decoders), and another residual add.
+Rotary decoders rotate queries and keys according to token position. Grouped
+attention shares each stored KV head across several query heads. Attention stores
+previous keys and values; these depend on the input tokens.
 
 The compiler emits a separate constant circuit for every weight matrix. For
 example, multiplying an input by a weight of 5 becomes `(input << 2) + input`.
@@ -43,8 +45,10 @@ traffic, wiring, or the area required to represent the model.
 
 ## Numbers and scope
 
-Matrix weights use INT8, INT4 or ternary quantisation. Linear inputs use INT8,
-residuals INT16 and dot products INT32. LayerNorm, GELU and softmax use integer
+Matrix weights use INT8, INT4 or ternary quantisation. The compact path uses INT8
+linear inputs and INT16 residuals. The wide path uses INT16 normalised and
+feed-forward values with INT32 residuals. Attention Q/K/V remain INT8; dot products
+use INT32 with a checked overflow bound. LayerNorm/RMSNorm, GELU/SiLU and softmax use integer
 approximations. Calibration selects scales without training the model.
 RTL is checked exactly against the integer reference. Quantisation error against
 the floating-point checkpoint is measured separately.

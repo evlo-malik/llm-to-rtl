@@ -10,7 +10,7 @@ import pytest
 import torch
 from safetensors.torch import save_file
 from compiler.llama import fold_llama
-from compiler.gpt2 import FloatGPT
+from compiler.reference import FloatDecoder
 from compiler.checkpoint import load_checkpoint
 from compiler.compile import compile_checkpoint
 
@@ -82,7 +82,7 @@ def test_float_adapter(tmp_path, family):
     with torch.no_grad():
         expected = ref(torch.tensor([tokens])).logits[0].numpy()
     np.testing.assert_allclose(
-        FloatGPT(f).forward(tokens), expected, rtol=2e-4, atol=2e-6
+        FloatDecoder(f).forward(tokens), expected, rtol=2e-4, atol=2e-6
     )
 
 
@@ -106,7 +106,10 @@ def test_scaled_rope(tmp_path, rope):
     with torch.no_grad():
         expected = ref(torch.tensor([tokens])).logits[0].numpy()
     np.testing.assert_allclose(
-        FloatGPT(fold_llama(cfg, st, 8)).forward(tokens), expected, rtol=2e-4, atol=2e-6
+        FloatDecoder(fold_llama(cfg, st, 8)).forward(tokens),
+        expected,
+        rtol=2e-4,
+        atol=2e-6,
     )
 
 

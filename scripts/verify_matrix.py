@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 
@@ -18,27 +19,47 @@ from compiler.bundle import load_bundle
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--module", help="select a fixed matrix from a full model")
     parser.add_argument("--sim", choices=("icarus", "verilator"), default="verilator")
     args = parser.parse_args()
     out = args.output.resolve()
     manifest = json.loads((out / "manifest.json").read_text())
     modules = manifest["matrix_modules"]
-    if manifest["scope"] != "matrices_only" or len(modules) != 1:
-        parser.error("compile one matrix with --matrices-only --only NAME")
-    name = modules[0]["module"]
+    names = [m["module"] for m in modules]
+    if args.module:
+        if args.module not in names:
+            parser.error("module is not a fixed matrix in this manifest")
+        name = args.module
+    elif manifest["scope"] == "matrices_only" and len(names) == 1:
+        name = names[0]
+    else:
+        parser.error("select a matrix with --module NAME")
     source = out / "rtl" / f"{name}.sv"
     if (
         hashlib.sha256(source.read_bytes()).hexdigest()
         != manifest["rtl_sha256"][source.name]
     ):
         parser.error("generated RTL differs from manifest")
-    q = load_bundle(out)[name]
-    fixture = out / "sim_build" / "fixture.npz"
-    fixture.parent.mkdir(exist_ok=True)
-    np.savez(fixture, w=q["w"], b=np.zeros(q["w"].shape[0], dtype=np.int64))
-    report = out / f"verification_{args.sim}.json"
+    bundle = load_bundle(out)
+    if manifest["scope"] == "full_model":
+        if name == "lm_head":
+            q = bundle[name]
+        else:
+            match = re.fullmatch(r"layer(\d+)_(qkv|proj|ffwd1|ffwd2)", name)
+            q = bundle["layers"][int(match[1])][match[2]]
+    else:
+        q = bundle[name]
+    workspace = out / "sim_build" / name
+    fixture = workspace / "fixture.npz"
+    fixture.parent.mkdir(parents=True, exist_ok=True)
+    data = dict(w=q["w"], b=q.get("b", np.zeros(q["w"].shape[0], dtype=np.int64)))
+    if "m0" in q:
+        data.update(m0=q["m0"], shifts=q["n"], out_bits=q["out_bits"])
+    np.savez(fixture, **data)
+    suffix = name + "_" if args.module else ""
+    report = out / f"verification_{suffix}{args.sim}.json"
     report.unlink(missing_ok=True)
-    build = out / "sim_build" / args.sim / "build"
+    build = workspace / args.sim / "build"
     runner = get_runner(args.sim)
     runner.build(
         sources=[source],

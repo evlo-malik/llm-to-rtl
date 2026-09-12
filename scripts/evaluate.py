@@ -14,7 +14,8 @@ from compiler.bundle import load_bundle
 from compiler.checkpoint import load_checkpoint
 from compiler.compile import read_calibration
 from compiler.llama import fold_llama
-from compiler.gpt2 import fold_gpt2, FloatGPT, IntGPT
+from compiler.gpt2 import fold_gpt2
+from compiler.reference import FloatDecoder, IntDecoder
 
 
 def main():
@@ -35,12 +36,14 @@ def main():
     if any(s in manifest["calibration_tokens"] for s in sequences):
         parser.error("evaluation sequence was used for calibration")
     q = load_bundle(args.output)
-    floating = FloatGPT(
+    floating = FloatDecoder(
         (fold_gpt2 if cfg["model_type"] == "gpt2" else fold_llama)(
             cfg, state, manifest["context"]
         )
     )
-    integer = IntGPT(q)
+    integer = IntDecoder(q)
+    nll_float = nll_integer = 0.0
+    predicted_tokens = 0
     agree = total = 0
     max_error = 0.0
     abs_error = 0.0
@@ -48,6 +51,20 @@ def main():
     for tokens in sequences:
         expected = floating.forward(np.array(tokens))
         actual = integer.forward(tokens) * q["lm_head"]["s_out"][None, :]
+        if len(tokens) > 1:
+
+            def nll(logits):
+                z = logits[:-1] - logits[:-1].max(-1, keepdims=True)
+                return float(
+                    np.sum(
+                        np.log(np.exp(z).sum(-1))
+                        - z[np.arange(len(tokens) - 1), tokens[1:]]
+                    )
+                )
+
+            nll_float += nll(expected)
+            nll_integer += nll(actual)
+            predicted_tokens += len(tokens) - 1
         agree += int(np.count_nonzero(actual.argmax(-1) == expected.argmax(-1)))
         total += len(tokens)
         error = np.abs(actual - expected)
@@ -56,6 +73,13 @@ def main():
         elements += error.size
     report = dict(
         sequences=len(sequences),
+        predicted_tokens=predicted_tokens,
+        float_perplexity=float(np.exp(nll_float / predicted_tokens))
+        if predicted_tokens
+        else None,
+        integer_perplexity=float(np.exp(nll_integer / predicted_tokens))
+        if predicted_tokens
+        else None,
         positions=total,
         argmax_agreement=agree / total,
         max_abs_logit_error=max_error,

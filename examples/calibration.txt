@@ -1,0 +1,8 @@
+Once upon a time there was a small robot.
+The capital of France is Paris.
+A computer stores information and performs calculations.
+Memory bandwidth limits the speed of many programs.
+The cat sat on a mat in the sun.
+One plus one equals two.
+The quick brown fox jumps over the lazy dog.
+A language model predicts the next token.

@@ -5,7 +5,8 @@ import numpy as np
 import pytest
 import torch
 from compiler.checkpoint import load_checkpoint
-from compiler.gpt2 import fold_gpt2, FloatGPT, calibrate, quantise_model, IntGPT
+from compiler.gpt2 import fold_gpt2
+from compiler.reference import FloatDecoder, calibrate, quantise_model, IntDecoder
 
 MODEL = Path(__file__).resolve().parents[1] / "models/tiny-gpt2"
 
@@ -32,10 +33,10 @@ def test_pretrained_gpt2_against_transformers():
     tokens = [15496, 995, 0, 314, 716, 257, 703, 13]
     with torch.no_grad():
         expected = model(torch.tensor([tokens])).logits[0].numpy()
-    actual = FloatGPT(folded).forward(tokens)
+    actual = FloatDecoder(folded).forward(tokens)
     np.testing.assert_allclose(actual, expected, atol=2e-6, rtol=2e-5)
     q = quantise_model(folded, calibrate(folded, [tokens]), 8)
-    actual_int = IntGPT(q).forward(tokens)
+    actual_int = IntDecoder(q).forward(tokens)
     agreement = np.mean(actual_int.argmax(-1) == expected.argmax(-1))
     assert agreement >= 0.75
     print(
@@ -63,5 +64,5 @@ def test_wider_float_adapter_against_transformers(tmp_path):
     tokens = [1, 6, 4, 9, 16, 0, 2, 8]
     with torch.no_grad():
         expected = model(torch.tensor([tokens])).logits[0].numpy()
-    actual = FloatGPT(fold_gpt2(cfg, state, 8)).forward(np.array(tokens))
+    actual = FloatDecoder(fold_gpt2(cfg, state, 8)).forward(np.array(tokens))
     np.testing.assert_allclose(actual, expected, atol=2e-6, rtol=2e-5)
