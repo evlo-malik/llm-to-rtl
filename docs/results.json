@@ -1,379 +1,1870 @@
 {
   "date": "2026-09-12",
-  "source_commit": "c222fef5248dba47d08ad35ae6b7d89f484db97d",
+  "source_commit": "056f3c874638472939684c058aaa87aea1406f98",
   "regression": {
-    "command": "python -m pytest tests -q",
-    "passed": 25
+    "passed": 54,
+    "ci": "https://github.com/evlo-malik/llm-to-rtl/actions/runs/34705279353",
+    "conclusion": "success"
   },
-  "gpt2": {
-    "model_type": "gpt2",
-    "scope": "full_model",
-    "bits": 8,
+  "area_report": "area.json",
+  "stories260k": {
+    "model_type": "llama",
     "source": {
-      "model": "sshleifer/tiny-gpt2",
-      "revision": "5f91d94bd9cd7190a9f3216ff93cd1dd95f2c7be",
+      "model": "karpathy/tinyllamas",
+      "revision": "0bd21da7698eaf29a0d7de3992de8a46ef624add",
+      "subfolder": "stories260K",
       "sha256": {
-        "config.json": "77a9e9830c3abeba929f5c61e0e97c398f98b4481ad75516c0be5bf038b340b0",
-        "pytorch_model.bin": "b706b24034032bdfe765ded5ab6403d201d295a995b790cb24c74becca5c04e6",
-        "vocab.json": "03087853bc70c618b66e7c7a43e787d2db4c469416beac9a483e53dad1f72f27",
-        "merges.txt": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
-        "tokenizer_config.json": "5e04eb606e3a1583530a42e36c2a6b6615c86f34fe77e44d9ddeb43ff940931f",
-        "special_tokens_map.json": "c0b3c279b6ecdb71996a86ffb4d4ab94dfdb5df95f00bac9515688faef2ff5dd"
+        "stories260K.pt": "eec953f9d0f139e894ef8996302680e64b24813c7a98425424f5c85f7cf4abb1",
+        "tok512.model": "dfff07d929db979913f166ec94a6f5ecad4c70cfed8eb5c9cbe7e464455e46f5"
       }
     },
     "checkpoint_sha256": {
-      "config.json": "77a9e9830c3abeba929f5c61e0e97c398f98b4481ad75516c0be5bf038b340b0",
-      "model.safetensors": "fa2c9a6c197dc9d0c55db9c1644a126c2f4c5d405ac9a2460dfebac380a67cee"
+      "config.json": "78bcaf99ff45e212096e6552bba0ba6f56877025f3e85584e3999582bc440d99",
+      "model.safetensors": "938471ca57ffa5ac6bce2f072fb797cc4027278a5e3707ac72e83be1a2cc0c9e"
     },
     "rtl_sha256": {
-      "attention.sv": "3e7ba1285a1ea064d7370192e54f9c931c5007196e63670a03537c562efe21c5",
-      "fixed_embedding.sv": "e9d10338131257ff6d8310395550dc27a1f3a031d81f68cf0a5e1a9c6ff26360",
+      "attention.sv": "a94ab41842f478140fa25a8cd0667a53b0dcd6cf4051ca4bd252284744adb2c4",
+      "fixed_embedding.sv": "7150ba45f8f4311dc4b5bf098509aa28b948c610ac6032681ec69414b80ea486",
+      "fixed_rotary.sv": "be5f8631966e9b0047ffe95ea08e92ad206397a8cbf6a9bb3f8a531dd6855e26",
       "isqrt.sv": "1ab4630c3ea9cea48cdaf3e662d67e72a8f37fe88d1d066d4d30d11b8acaeafb",
-      "layer0_ffwd1.sv": "d5770f9e9438f670227b414a2f4cb15e4e4c444baa6153b291b6f2d3526a61e6",
-      "layer0_ffwd2.sv": "a983174f11817255392a991a56fb6b017bb960aeb16797ff18533a58dc344509",
-      "layer0_gelu.sv": "bd12a80b715fdd2bf8a0458af7951b886c9952d9159c0520a901bcfe15757cef",
-      "layer0_proj.sv": "9935cf0d436bace6eebc7c05ca40fb0633d7356b1d241c18493d27b2a8f1743d",
-      "layer0_qkv.sv": "c9a6c2797dc56198aa2d2303caf33ed85cb2436c540ae7ccb537217da8b86201",
-      "layer1_ffwd1.sv": "72a6771c595ba122beb9b67657e454fd5c13ba4cfb216c7a01a6c716baf81d0d",
-      "layer1_ffwd2.sv": "8c97580745b6156b1ae71de7eb102d3ae0ca5e696ca412bb427c54f0c04c5284",
-      "layer1_gelu.sv": "96bf6043c22638f9e53b896fc42333d7dcebd63958c47a689c27ad03d9e89f16",
-      "layer1_proj.sv": "e135b8ec74f443d4123a40a237b669385ca6ffbe4d147be9fa0554a7b210631d",
-      "layer1_qkv.sv": "1f871980253d180b487629bc11b7c3a4bb7287b2b1305388b06b4a8f1c979dae",
-      "layernorm.sv": "4886e596d0db48a1216ad294dc26dd0b33289aaf2b6c71c72768f4a345ce7329",
-      "lm_head.sv": "83cf53be30518b0a3dae05b3c5c90470bfc9bc62fd3cb86c2f04bfe0f415c239",
-      "model_control.sv": "908a7967159b2aabe290c09f272c94e484cab54dac40baed642e83cf28248aad",
-      "model_top.sv": "414f22056d8e68575bd806767e318d029491ce7869c11db3632ce7c0d690c10a",
+      "layer0_ffwd1.sv": "50ca050ee1c1c3ea8be345029cbc3ee15412d37e68ff59992a038dd00a0c85b7",
+      "layer0_ffwd2.sv": "2baaf1ee2505f89fa2d43320151c07357577767f49684663b4a5e1ebbde1a2b3",
+      "layer0_gelu.sv": "7b42ba9f99bb76fac63939be3e0d2650b09231ddbaa84a034fe760788b9de371",
+      "layer0_proj.sv": "b7eb5e132144559b0ad33e2a177887317bc4734fc353bde804e135d219dc4564",
+      "layer0_qkv.sv": "3977a68fa73c640c4724e54ef4ce2116db5518b9aa03159c8d362cb0bd2603e0",
+      "layer1_ffwd1.sv": "7efc64b9976eb5eeac9b18df9626009627ff1b2bf3b3f37d7de4c54eeb589a4b",
+      "layer1_ffwd2.sv": "7385c74a975baf322e974939ca6981bf7531aa76c6c14500ad2507d135c06ff5",
+      "layer1_gelu.sv": "014654cb574d04ddf09e033227cb7f45879195d879bb9b39c6c8b083612845dc",
+      "layer1_proj.sv": "daff0d74cfbb5dd09def157e0477e0ac6e9fd546530bb663db52ca73e433f9e7",
+      "layer1_qkv.sv": "5853d565b3a79ed5e99d7a14340797c8b7f6ae056f2a3153c56a666c6ffd1007",
+      "layer2_ffwd1.sv": "7379fb254ab136ae31a0e012266761fcc5e3b0434a6ed22ae2e1624d744af579",
+      "layer2_ffwd2.sv": "e759f0f73ceca577fbd6d3a2bbf7957b810bc2150c4fece513e54160ea09e6b4",
+      "layer2_gelu.sv": "61f76064963e2b50b07b601b903a86837b88254167b1f7bb71cdf448ca0e59b5",
+      "layer2_proj.sv": "b83d51ba2cbd3462c486058527693705bb6daf0b604fb2cb9cf44299e96544d7",
+      "layer2_qkv.sv": "306d56d20e7461e99bade704ff00f3fbc1a49f5a236e4a0d8bdc441e88dbed11",
+      "layer3_ffwd1.sv": "8f97c368fa8c188e7e7edd5cdb0ba6aafea71c9a7f7799c9189894d780664e19",
+      "layer3_ffwd2.sv": "9fab9fe916ce8031ee55f8d8faa86a6f284db6faf152309d9934091d7f535586",
+      "layer3_gelu.sv": "8ccf5c5b541b3d79d5dececeebaa6174a249cb4573d5ffa8db09076c3b694ede",
+      "layer3_proj.sv": "f6ff7501211102a351492c836688586483a185097f446d4e214d433a561e7482",
+      "layer3_qkv.sv": "5a05422115b1ac58cc82c868657572fa06c4271f7a49415f7808e699bc4eb8a6",
+      "layer4_ffwd1.sv": "6bc2e1efb60230a6316b05e3121809818cb68a3cf6af8b933bed6d61ce2c5654",
+      "layer4_ffwd2.sv": "3b59a63e02c121269693a49e294f05ae86f4cef8f4913b578c1136124511bc5c",
+      "layer4_gelu.sv": "b124ad968cc765f81bd68d95af8a929f60c73062dcaa83927c0a59efe9456677",
+      "layer4_proj.sv": "9736e8494b377e957e846943d9df183e8ccfbc673c04052ced33331db1acb17d",
+      "layer4_qkv.sv": "ade0ee4b98525b62303234b1409075085820f9f7430bdfd94fcdaa0a6ccf9a55",
+      "layernorm.sv": "5f931d78c4fcf486f52e4a6d8d6fb57b7a3bdbb479e2a6c05ee0f1d5bbcf5492",
+      "lm_head.sv": "6e348824193a16cbb803db675e1678f443e16d3d62cc17a0a03a198e6880ea72",
+      "model_control.sv": "292bb1ec75cb67c1522e7ba32e90b1ac9ff9f40c26fa6375271af0883bdb1fdf",
+      "model_top.sv": "35843e1fe34a8ee3e1c1665d8b3bb74d96c8380d920fb6e3e44c8d78b8342988",
       "udiv.sv": "0238e5ef9bcf85594150393f24773420c0677a06e6350b0f8f15733fda042f43"
     },
-    "matrix_modules": [
+    "bits": 8,
+    "activation_bits": 8,
+    "residual_bits": 16,
+    "context": 64,
+    "vocab": 512,
+    "width": 64,
+    "layers": 5,
+    "emitted_coefficients": 292096,
+    "scope": "full_model",
+    "calibration_sha256": "b2f078f25c60c62073b492ff2a839742e2f9f355af65b4965eec5915c8126295",
+    "coefficient_audit": {
+      "scope": "emitted coefficient arithmetic, not a full simulation",
+      "passed": true,
+      "matrices": {
+        "layer0_qkv": {
+          "rows": 128,
+          "coefficients": 8192,
+          "products": 5494,
+          "passed": true
+        },
+        "layer0_proj": {
+          "rows": 64,
+          "coefficients": 4096,
+          "products": 3353,
+          "passed": true
+        },
+        "layer0_ffwd1": {
+          "rows": 344,
+          "coefficients": 22016,
+          "products": 9911,
+          "passed": true
+        },
+        "layer0_ffwd2": {
+          "rows": 64,
+          "coefficients": 11008,
+          "products": 8945,
+          "passed": true
+        },
+        "layer1_qkv": {
+          "rows": 128,
+          "coefficients": 8192,
+          "products": 5618,
+          "passed": true
+        },
+        "layer1_proj": {
+          "rows": 64,
+          "coefficients": 4096,
+          "products": 3414,
+          "passed": true
+        },
+        "layer1_ffwd1": {
+          "rows": 344,
+          "coefficients": 22016,
+          "products": 9779,
+          "passed": true
+        },
+        "layer1_ffwd2": {
+          "rows": 64,
+          "coefficients": 11008,
+          "products": 8874,
+          "passed": true
+        },
+        "layer2_qkv": {
+          "rows": 128,
+          "coefficients": 8192,
+          "products": 5599,
+          "passed": true
+        },
+        "layer2_proj": {
+          "rows": 64,
+          "coefficients": 4096,
+          "products": 3366,
+          "passed": true
+        },
+        "layer2_ffwd1": {
+          "rows": 344,
+          "coefficients": 22016,
+          "products": 9673,
+          "passed": true
+        },
+        "layer2_ffwd2": {
+          "rows": 64,
+          "coefficients": 11008,
+          "products": 8896,
+          "passed": true
+        },
+        "layer3_qkv": {
+          "rows": 128,
+          "coefficients": 8192,
+          "products": 5515,
+          "passed": true
+        },
+        "layer3_proj": {
+          "rows": 64,
+          "coefficients": 4096,
+          "products": 3314,
+          "passed": true
+        },
+        "layer3_ffwd1": {
+          "rows": 344,
+          "coefficients": 22016,
+          "products": 9764,
+          "passed": true
+        },
+        "layer3_ffwd2": {
+          "rows": 64,
+          "coefficients": 11008,
+          "products": 8851,
+          "passed": true
+        },
+        "layer4_qkv": {
+          "rows": 128,
+          "coefficients": 8192,
+          "products": 5674,
+          "passed": true
+        },
+        "layer4_proj": {
+          "rows": 64,
+          "coefficients": 4096,
+          "products": 3306,
+          "passed": true
+        },
+        "layer4_ffwd1": {
+          "rows": 344,
+          "coefficients": 22016,
+          "products": 9856,
+          "passed": true
+        },
+        "layer4_ffwd2": {
+          "rows": 64,
+          "coefficients": 11008,
+          "products": 8921,
+          "passed": true
+        },
+        "lm_head": {
+          "rows": 512,
+          "coefficients": 32768,
+          "products": 4756,
+          "passed": true
+        }
+      },
+      "embeddings": {
+        "token_rows": 512,
+        "position_rows": 64,
+        "passed": true
+      },
+      "matrix_coefficients": 259328
+    },
+    "upstream_reference": {
+      "passed": true,
+      "upstream_dtype": "float32",
+      "absolute_tolerance": 0.0005,
+      "relative_tolerance": 0.0002,
+      "sequences": 4,
+      "logits_compared": 91648,
+      "max_abs_error": 1.9802624878551e-05,
+      "checkpoint_sha256": {
+        "config.json": "78bcaf99ff45e212096e6552bba0ba6f56877025f3e85584e3999582bc440d99",
+        "model.safetensors": "938471ca57ffa5ac6bce2f072fb797cc4027278a5e3707ac72e83be1a2cc0c9e"
+      },
+      "transformers": "4.57.6"
+    },
+    "evaluation": {
+      "sequences": 4,
+      "predicted_tokens": 175,
+      "float_perplexity": 4.364433742955118,
+      "integer_perplexity": 4.482384802196687,
+      "positions": 179,
+      "argmax_agreement": 0.9441340782122905,
+      "max_abs_logit_error": 4.435816692497287,
+      "mean_abs_logit_error": 0.3783665864255198,
+      "evaluation_tokens": [
+        [
+          1,
+          403,
+          407,
+          261,
+          378,
+          432,
+          261,
+          376,
+          352,
+          412,
+          430,
+          430,
+          275,
+          397,
+          396,
+          322,
+          261,
+          298,
+          276,
+          302,
+          272,
+          414,
+          276,
+          356,
+          426,
+          338,
+          397,
+          355,
+          267,
+          344,
+          294,
+          280,
+          295,
+          420,
+          309,
+          419,
+          269,
+          337,
+          335,
+          311,
+          268,
+          420,
+          309,
+          386,
+          426
+        ],
+        [
+          1,
+          307,
+          425,
+          429,
+          422,
+          381,
+          261,
+          348,
+          411,
+          306,
+          327,
+          267,
+          422,
+          268,
+          414,
+          294,
+          426,
+          338,
+          267,
+          414,
+          433,
+          312,
+          267,
+          265,
+          282,
+          414,
+          264,
+          269,
+          282,
+          323,
+          312,
+          322,
+          265,
+          273,
+          413,
+          285,
+          426
+        ],
+        [
+          1,
+          410,
+          447,
+          280,
+          415,
+          290,
+          418,
+          272,
+          277,
+          264,
+          261,
+          401,
+          356,
+          282,
+          425,
+          339,
+          422,
+          353,
+          265,
+          352,
+          414,
+          380,
+          426,
+          342,
+          268,
+          420,
+          277,
+          428,
+          415,
+          413,
+          312,
+          270,
+          287,
+          411,
+          269,
+          298,
+          412,
+          360,
+          312,
+          273,
+          413,
+          285,
+          426
+        ],
+        [
+          1,
+          291,
+          334,
+          341,
+          284,
+          303,
+          381,
+          261,
+          329,
+          412,
+          323,
+          417,
+          431,
+          425,
+          421,
+          298,
+          295,
+          418,
+          302,
+          426,
+          410,
+          459,
+          363,
+          284,
+          304,
+          416,
+          299,
+          432,
+          281,
+          273,
+          413,
+          285,
+          266,
+          265,
+          272,
+          421,
+          327,
+          285,
+          419,
+          269,
+          273,
+          413,
+          429,
+          260,
+          418,
+          265,
+          398,
+          413,
+          285,
+          431,
+          421,
+          417,
+          406,
+          426
+        ]
+      ],
+      "checkpoint_sha256": {
+        "config.json": "78bcaf99ff45e212096e6552bba0ba6f56877025f3e85584e3999582bc440d99",
+        "model.safetensors": "938471ca57ffa5ac6bce2f072fb797cc4027278a5e3707ac72e83be1a2cc0c9e"
+      }
+    },
+    "verification": [
       {
-        "module": "layer0_qkv",
-        "inputs": 2,
-        "outputs": 6,
-        "coefficients": 12,
-        "nonzero": 12,
-        "constant_products": 9,
-        "csd_add_sub_terms": 21,
-        "weight_storage": "constant_logic",
-        "output_bits": 8
+        "simulator": "Verilator",
+        "positions": 64,
+        "logits_compared": 32768,
+        "tokens": [
+          1,
+          403,
+          407,
+          261,
+          378,
+          432,
+          383,
+          286,
+          261,
+          376,
+          298,
+          315,
+          421,
+          395,
+          317,
+          426,
+          338,
+          401,
+          396,
+          267,
+          337,
+          410,
+          408,
+          419,
+          292,
+          411,
+          322,
+          265,
+          282,
+          295,
+          433,
+          426,
+          385,
+          328,
+          432,
+          358,
+          263,
+          377,
+          267,
+          265,
+          282,
+          295,
+          433,
+          267,
+          337,
+          426,
+          338,
+          394,
+          261,
+          370,
+          432,
+          352,
+          266,
+          268,
+          388,
+          426,
+          291,
+          268,
+          388,
+          286,
+          399,
+          262,
+          429,
+          295
+        ],
+        "next_token": 266,
+        "cycles_per_token": [
+          17795,
+          18515,
+          19235,
+          19955,
+          20675,
+          21395,
+          22115,
+          22835,
+          23555,
+          24275,
+          24995,
+          25715,
+          26435,
+          27155,
+          27875,
+          28595,
+          29315,
+          30035,
+          30755,
+          31475,
+          32195,
+          32915,
+          33635,
+          34355,
+          35075,
+          35795,
+          36515,
+          37235,
+          37955,
+          38675,
+          39395,
+          40115,
+          40835,
+          41555,
+          42275,
+          42995,
+          43715,
+          44435,
+          45155,
+          45875,
+          46595,
+          47315,
+          48035,
+          48755,
+          49475,
+          50195,
+          50915,
+          51635,
+          52355,
+          53075,
+          53795,
+          54515,
+          55235,
+          55955,
+          56675,
+          57395,
+          58115,
+          58835,
+          59555,
+          60275,
+          60995,
+          61715,
+          62435,
+          63155
+        ],
+        "clear_after_sequence": true,
+        "clear_during_token": true,
+        "invalid_token_checked": false,
+        "context_limit_checked": true,
+        "seconds": 254.991,
+        "passed": true
       },
       {
-        "module": "layer0_proj",
-        "inputs": 2,
-        "outputs": 2,
-        "coefficients": 4,
-        "nonzero": 4,
-        "constant_products": 3,
-        "csd_add_sub_terms": 6,
-        "weight_storage": "constant_logic",
-        "output_bits": 16
-      },
-      {
-        "module": "layer0_ffwd1",
-        "inputs": 2,
-        "outputs": 8,
-        "coefficients": 16,
-        "nonzero": 16,
-        "constant_products": 11,
-        "csd_add_sub_terms": 27,
-        "weight_storage": "constant_logic",
-        "output_bits": 8
-      },
-      {
-        "module": "layer0_ffwd2",
-        "inputs": 8,
-        "outputs": 2,
-        "coefficients": 16,
-        "nonzero": 16,
-        "constant_products": 16,
-        "csd_add_sub_terms": 36,
-        "weight_storage": "constant_logic",
-        "output_bits": 16
-      },
-      {
-        "module": "layer1_qkv",
-        "inputs": 2,
-        "outputs": 6,
-        "coefficients": 12,
-        "nonzero": 12,
-        "constant_products": 10,
-        "csd_add_sub_terms": 24,
-        "weight_storage": "constant_logic",
-        "output_bits": 8
-      },
-      {
-        "module": "layer1_proj",
-        "inputs": 2,
-        "outputs": 2,
-        "coefficients": 4,
-        "nonzero": 4,
-        "constant_products": 4,
-        "csd_add_sub_terms": 10,
-        "weight_storage": "constant_logic",
-        "output_bits": 16
-      },
-      {
-        "module": "layer1_ffwd1",
-        "inputs": 2,
-        "outputs": 8,
-        "coefficients": 16,
-        "nonzero": 16,
-        "constant_products": 12,
-        "csd_add_sub_terms": 33,
-        "weight_storage": "constant_logic",
-        "output_bits": 8
-      },
-      {
-        "module": "layer1_ffwd2",
-        "inputs": 8,
-        "outputs": 2,
-        "coefficients": 16,
-        "nonzero": 16,
-        "constant_products": 15,
-        "csd_add_sub_terms": 37,
-        "weight_storage": "constant_logic",
-        "output_bits": 16
-      },
-      {
-        "module": "lm_head",
-        "inputs": 2,
-        "outputs": 50257,
-        "coefficients": 100514,
-        "nonzero": 98986,
-        "constant_products": 405,
-        "csd_add_sub_terms": 1105,
-        "weight_storage": "constant_logic",
-        "output_bits": 32
+        "simulator": "Icarus Verilog",
+        "positions": 8,
+        "logits_compared": 4096,
+        "tokens": [
+          1,
+          403,
+          407,
+          261,
+          378,
+          432,
+          383,
+          286
+        ],
+        "next_token": 261,
+        "cycles_per_token": [
+          17795,
+          18515,
+          19235,
+          19955,
+          20675,
+          21395,
+          22115,
+          22835
+        ],
+        "clear_after_sequence": true,
+        "clear_during_token": true,
+        "invalid_token_checked": false,
+        "context_limit_checked": false,
+        "seconds": 60.269,
+        "passed": true
       }
     ],
     "synthesis": {
       "passed": true,
       "violations": [],
-      "yosys": "Yosys 0.68+136 (git sha1 c30457480-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin25.5-clang++ 21.1.8)",
-      "mutable_memory_bits": 2098472
-    },
-    "fixed_matrices_audited": 9,
-    "verification": [
-      {
-        "simulator": "Icarus Verilog",
-        "positions": 8,
-        "logits_compared": 402056,
-        "tokens": [
-          15496,
-          995,
-          16046,
-          16046,
-          16046,
-          16046,
-          16046,
-          16046
-        ],
-        "next_token": 16046,
-        "cycles_per_token": [
-          101200,
-          101216,
-          101232,
-          101248,
-          101264,
-          101280,
-          101296,
-          101312
-        ],
-        "clear_after_sequence": true,
-        "clear_during_token": true,
-        "invalid_token_checked": true,
-        "context_limit_checked": true,
-        "seconds": 83.723,
-        "passed": true
+      "matrix_cells": {
+        "layer0_ffwd1$model_top.u_layer0_ffwd1": 34910,
+        "layer0_ffwd2$model_top.u_layer0_ffwd2": 22340,
+        "layer0_proj$model_top.u_layer0_proj": 8799,
+        "layer0_qkv$model_top.u_layer0_qkv": 15282,
+        "layer1_ffwd1$model_top.u_layer1_ffwd1": 34721,
+        "layer1_ffwd2$model_top.u_layer1_ffwd2": 22152,
+        "layer1_proj$model_top.u_layer1_proj": 8989,
+        "layer1_qkv$model_top.u_layer1_qkv": 15478,
+        "layer2_ffwd1$model_top.u_layer2_ffwd1": 34632,
+        "layer2_ffwd2$model_top.u_layer2_ffwd2": 22156,
+        "layer2_proj$model_top.u_layer2_proj": 8793,
+        "layer2_qkv$model_top.u_layer2_qkv": 15482,
+        "layer3_ffwd1$model_top.u_layer3_ffwd1": 34737,
+        "layer3_ffwd2$model_top.u_layer3_ffwd2": 22037,
+        "layer3_proj$model_top.u_layer3_proj": 8679,
+        "layer3_qkv$model_top.u_layer3_qkv": 15316,
+        "layer4_ffwd1$model_top.u_layer4_ffwd1": 34792,
+        "layer4_ffwd2$model_top.u_layer4_ffwd2": 22260,
+        "layer4_proj$model_top.u_layer4_proj": 8692,
+        "layer4_qkv$model_top.u_layer4_qkv": 15599,
+        "lm_head$model_top.u_lm_head": 22443
       },
-      {
-        "simulator": "Verilator",
-        "positions": 8,
-        "logits_compared": 402056,
-        "tokens": [
-          15496,
-          995,
-          16046,
-          16046,
-          16046,
-          16046,
-          16046,
-          16046
-        ],
-        "next_token": 16046,
-        "cycles_per_token": [
-          101200,
-          101216,
-          101232,
-          101248,
-          101264,
-          101280,
-          101296,
-          101312
-        ],
-        "clear_after_sequence": true,
-        "clear_during_token": true,
-        "invalid_token_checked": true,
-        "context_limit_checked": true,
-        "seconds": 29.601,
-        "passed": true
-      }
-    ],
-    "evaluation": {
-      "sequences": 4,
-      "positions": 31,
-      "argmax_agreement": 1.0,
-      "max_abs_logit_error": 0.004215413342295249,
-      "mean_abs_logit_error": 0.00044435829402461526,
-      "evaluation_tokens": [
-        [
-          32,
-          2266,
-          21190,
-          29742,
-          2029,
-          262,
-          5897,
-          4675
-        ],
-        [
-          3347,
-          4721,
-          262,
-          1492,
-          290,
-          2067,
-          3555,
-          13
-        ],
-        [
-          2061,
-          4325,
-          618,
-          262,
-          6193,
-          2458,
-          30
-        ],
-        [
-          31334,
-          10087,
-          11406,
-          319,
-          262,
-          13510,
-          13990,
-          13
-        ]
+      "mutable_memories": [
+        {
+          "module": "attention$model_top.attn",
+          "cell": "e_buf",
+          "write_ports": 1,
+          "bits": 1088
+        },
+        {
+          "module": "attention$model_top.attn",
+          "cell": "kc",
+          "write_ports": 1,
+          "bits": 81920
+        },
+        {
+          "module": "attention$model_top.attn",
+          "cell": "p_buf",
+          "write_ports": 1,
+          "bits": 1024
+        },
+        {
+          "module": "attention$model_top.attn",
+          "cell": "q_buf",
+          "write_ports": 1,
+          "bits": 512
+        },
+        {
+          "module": "attention$model_top.attn",
+          "cell": "s_buf",
+          "write_ports": 1,
+          "bits": 2048
+        },
+        {
+          "module": "attention$model_top.attn",
+          "cell": "vc",
+          "write_ports": 1,
+          "bits": 81920
+        },
+        {
+          "module": "fixed_rotary$model_top.u_fixed_rotary",
+          "cell": "x",
+          "write_ports": 1,
+          "bits": 1024
+        },
+        {
+          "module": "layer0_ffwd1$model_top.u_layer0_ffwd1",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer0_ffwd2$model_top.u_layer0_ffwd2",
+          "cell": "x",
+          "write_ports": 173,
+          "bits": 1376
+        },
+        {
+          "module": "layer0_gelu$model_top.u_layer0_gelu",
+          "cell": "x",
+          "write_ports": 1,
+          "bits": 2752
+        },
+        {
+          "module": "layer0_proj$model_top.u_layer0_proj",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer0_qkv$model_top.u_layer0_qkv",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer1_ffwd1$model_top.u_layer1_ffwd1",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer1_ffwd2$model_top.u_layer1_ffwd2",
+          "cell": "x",
+          "write_ports": 173,
+          "bits": 1376
+        },
+        {
+          "module": "layer1_gelu$model_top.u_layer1_gelu",
+          "cell": "x",
+          "write_ports": 1,
+          "bits": 2752
+        },
+        {
+          "module": "layer1_proj$model_top.u_layer1_proj",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer1_qkv$model_top.u_layer1_qkv",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer2_ffwd1$model_top.u_layer2_ffwd1",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer2_ffwd2$model_top.u_layer2_ffwd2",
+          "cell": "x",
+          "write_ports": 173,
+          "bits": 1376
+        },
+        {
+          "module": "layer2_gelu$model_top.u_layer2_gelu",
+          "cell": "x",
+          "write_ports": 1,
+          "bits": 2752
+        },
+        {
+          "module": "layer2_proj$model_top.u_layer2_proj",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer2_qkv$model_top.u_layer2_qkv",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer3_ffwd1$model_top.u_layer3_ffwd1",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer3_ffwd2$model_top.u_layer3_ffwd2",
+          "cell": "x",
+          "write_ports": 173,
+          "bits": 1376
+        },
+        {
+          "module": "layer3_gelu$model_top.u_layer3_gelu",
+          "cell": "x",
+          "write_ports": 1,
+          "bits": 2752
+        },
+        {
+          "module": "layer3_proj$model_top.u_layer3_proj",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer3_qkv$model_top.u_layer3_qkv",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer4_ffwd1$model_top.u_layer4_ffwd1",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer4_ffwd2$model_top.u_layer4_ffwd2",
+          "cell": "x",
+          "write_ports": 173,
+          "bits": 1376
+        },
+        {
+          "module": "layer4_gelu$model_top.u_layer4_gelu",
+          "cell": "x",
+          "write_ports": 1,
+          "bits": 2752
+        },
+        {
+          "module": "layer4_proj$model_top.u_layer4_proj",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layer4_qkv$model_top.u_layer4_qkv",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "layernorm$model_top.norm",
+          "cell": "buf_",
+          "write_ports": 1,
+          "bits": 1024
+        },
+        {
+          "module": "lm_head$model_top.u_lm_head",
+          "cell": "x",
+          "write_ports": 65,
+          "bits": 512
+        },
+        {
+          "module": "model_control$model_top.control",
+          "cell": "scratch",
+          "write_ports": 1,
+          "bits": 65536
+        }
       ],
-      "checkpoint_sha256": {
-        "config.json": "77a9e9830c3abeba929f5c61e0e97c398f98b4481ad75516c0be5bf038b340b0",
-        "model.safetensors": "fa2c9a6c197dc9d0c55db9c1644a126c2f4c5d405ac9a2460dfebac380a67cee"
-      }
-    },
-    "calibration_tokens": [
-      [
-        15496,
-        995,
-        13,
-        770,
-        318,
-        257,
-        1402,
-        6890
-      ],
-      [
-        464,
-        2068,
-        7586,
-        21831,
-        18045,
-        625,
-        262,
-        16931
-      ],
-      [
-        30871,
-        290,
-        29964,
-        389,
-        5884,
-        416,
-        19474,
-        13
-      ],
-      [
-        32,
-        2746,
-        26334,
-        262,
-        1306,
-        11241,
-        287,
-        257
-      ],
-      [
-        3198,
-        734,
-        1115,
-        1440,
-        1936,
-        2237,
-        3598,
-        3624
-      ],
-      [
-        23421,
-        318,
-        257,
-        1748,
-        13,
-        6342,
-        318,
-        1194
-      ]
-    ]
+      "mutable_memory_bits": 264928,
+      "yosys": "Yosys 0.68+136 (git sha1 c30457480-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin25.5-clang++ 21.1.8)",
+      "scope": "full_model",
+      "top": "model_top"
+    }
   },
-  "smollm2_key_projection": {
+  "smollm2_135m": {
     "model_type": "llama",
-    "scope": "matrices_only",
-    "bits": 4,
     "source": null,
     "checkpoint_sha256": {
       "config.json": "1d556eab73b69c7f11f64c557a2f9c6f440bd4c6b89bb2584a6b498c92603843",
       "model.safetensors": "80521b40281d6ce74e35c9282c22539e75aa0ac8578892b2a59955ef78d55da1"
     },
     "rtl_sha256": {
-      "layer0_k_proj.sv": "ce6a7804307a554ec6999885d8f3e4eab393e98533d0df969f0fdd477456d425"
+      "attention.sv": "a94ab41842f478140fa25a8cd0667a53b0dcd6cf4051ca4bd252284744adb2c4",
+      "fixed_embedding.sv": "1e93a28686f5eb87a86c1f2965226351e729544b4741e2d4eaf480297dd49b29",
+      "fixed_rotary.sv": "a4435086c25a16aeb7c856ca3db13c90333e4d9faee1ce2f1c71567529fe6595",
+      "isqrt.sv": "1ab4630c3ea9cea48cdaf3e662d67e72a8f37fe88d1d066d4d30d11b8acaeafb",
+      "isqrt_wide.sv": "5c71315c6470526a71292667713d79fdaa72ed864c51fa9e051989cca6b94f63",
+      "layer0_ffwd1.sv": "7b021aa31533f6ef7b66b42959b3f67e49d0e39d7d3f765943f09549cacd0ea8",
+      "layer0_ffwd2.sv": "06c82a69b90454d8db5081211e7066d4626a96ccf9f6139e9b332230c7c076ab",
+      "layer0_gelu.sv": "e1fba61bd6a34de3b7f7047c23dff990463c8af7fbb17e2548f8802868708708",
+      "layer0_proj.sv": "65ef050448dfbdfbd5ea99978f75c633d9278aa20da1958f91efa406b1513637",
+      "layer0_qkv.sv": "e7e154c61fc04c17c4fb8f6f3e79a06c8f141eaec5793be102b5fe0e417e7a0e",
+      "layer10_ffwd1.sv": "ccebe97cd8245448cd3c8ed8444bbb4fe10bb8aaa7a5747b1e7a5ff0cee89821",
+      "layer10_ffwd2.sv": "92c00b89df594e6b9341fd8c610eb80f9f29e4d40b071a7478458c1df90a1395",
+      "layer10_gelu.sv": "cc888d952ff14eb99c132065a3c45b7ab973eb0efedb9741675820d533d3a337",
+      "layer10_proj.sv": "892e0825d895df27658f72d9efceba491ddf444fa7a9578bb8d9bbe039201bdd",
+      "layer10_qkv.sv": "01d11386573f7d6138602a27ccfcf053e2eb38dcae9d18092d4b274e25147c07",
+      "layer11_ffwd1.sv": "9e34569cf0b316232cf5a54fb887133bee5be1bdcd8300d18c8a35188c05d6d4",
+      "layer11_ffwd2.sv": "b950f33de1a05b9ae320c6dc064020ab556f43fb3bd41151c107f02b04c29f20",
+      "layer11_gelu.sv": "aff1e99e0165e475d4bafaa5a192ca549216ee4a64b2a48d30029addcca7b725",
+      "layer11_proj.sv": "fe68c3ff44a234a66b263a889e2a39ebd30f5c8247b305945d824d7e00357415",
+      "layer11_qkv.sv": "c1cea0f7a083f30d6eb5eb241151668d8a7094dafc4f1d3616e8ed656b28a493",
+      "layer12_ffwd1.sv": "98384a945933e9922bafc97b222567754d481e065a26a7e7372ad3ee575a5c7c",
+      "layer12_ffwd2.sv": "59e26ee20d0410b85e18e4694926f372325c70c1af63c582b5a2d6f42996be45",
+      "layer12_gelu.sv": "00583360b9b449fed2c76bccf9d968a36f8f0bd63c8904103169d7e63a629130",
+      "layer12_proj.sv": "df55a643f8952d03a1f5fe57a146142ef5bcd6077e9c9b010943b83453e52262",
+      "layer12_qkv.sv": "5c62562a49d8cff2aa52de23e9dfd562f6d2d97c23ed67aba32bcbc6bf59be6c",
+      "layer13_ffwd1.sv": "74e3b90c2a478713d93b38ac4a118b729f671f274e70adcea01394c11e7fe28e",
+      "layer13_ffwd2.sv": "c439410646492f7c484a59668b22a7ed7b5a3ea91602e09ddf3195be5b83cafe",
+      "layer13_gelu.sv": "fcabb10cb940c51beeb603380255e5b6616c07c1c39208f7b56af127bb02257f",
+      "layer13_proj.sv": "5544276efc98e98b6538a9496b3b30da3fe58bf11e0945b8c3ef2bf9de4a1b9f",
+      "layer13_qkv.sv": "2e69f301a368755d2d81b264298c84e32a6a07a09f114bad313def96b829e087",
+      "layer14_ffwd1.sv": "c42f65933da4ec7b710218e537549e274f86cdd5eb01499001b7030d086ddce9",
+      "layer14_ffwd2.sv": "b6d05912ea042f29452a5f1a7c2ef52fa97067834617dcc099db5f4be3913f96",
+      "layer14_gelu.sv": "f98aee0a672d05cbe5a1e479fd625c05b1f96f9505d5fdb877ab13b388fcf50f",
+      "layer14_proj.sv": "72dd356738c69364b3df6bbed5a0a72eb9ab0f353d6f4b6c9f0ea28830f51f9d",
+      "layer14_qkv.sv": "b9d16a860a7a847ff262fb28b87e76cee4f61b5a392853a144bd43873257644f",
+      "layer15_ffwd1.sv": "b26c97e5286e9d944f2c775eb03151daf9992307510802cd1fbfeb14eda5cbb9",
+      "layer15_ffwd2.sv": "8898768364ac98692599e6cd022401f2866e31b5b4b671ace3be5463a96c8edd",
+      "layer15_gelu.sv": "636eff5f9a1d82591ce22e1e65bc37ede3f78f4131f0f1565c1a5580bcc002bf",
+      "layer15_proj.sv": "0696fb4ac6fdbf8227d731a184b9de899999ac675bef5e429541c7da4d919000",
+      "layer15_qkv.sv": "01bbf69c02a4b8d32f0dc4ee92f574791df5d9589ed8e28becc6fc4138bf2ca0",
+      "layer16_ffwd1.sv": "d238f0b416ca46408d94e44369fc0722932a088a9c5ab47bc35088d34d3b2331",
+      "layer16_ffwd2.sv": "53662682fd1d19ce75d9c3c6e577a00b3532d182e1514fe139b7c512ca7629d2",
+      "layer16_gelu.sv": "c069f3e4b44798b647e1f5e3ed5ee50052aeb1b50462dc25214361355b7c9118",
+      "layer16_proj.sv": "9a0d633ef9613c929a01c251b9c6ac357209bd3a053d9d7c4fb4045a84a75e46",
+      "layer16_qkv.sv": "2305e3e1cbf6d0c8693c6bd3adfea9f43f67ff38afd3f5d09ba57d269d1cd872",
+      "layer17_ffwd1.sv": "eb0b5118b6c922bda7c79b1f50e2b7f5f7363fcb05d3f1d0b0a652a3d5f1c810",
+      "layer17_ffwd2.sv": "af8558671b945202ad4405060d3845f760422931480f410153cf0195d23bc3ca",
+      "layer17_gelu.sv": "55e333cc13d38d60b6357ea3b3a313a5d9ef51fa1af884b73f53ea4b85626343",
+      "layer17_proj.sv": "870c268bd6fb688956fa8f310a7079fc2827acd037d117addf4cd5bcf54e2074",
+      "layer17_qkv.sv": "ad7247fb9e823c2482caf7c05379ca8585f7e5dc9a2cd17b617f5ba96857af9d",
+      "layer18_ffwd1.sv": "907886cfffda63de7f4465322de0e2bc7bfdb1685f0befe22a13c2a03585078d",
+      "layer18_ffwd2.sv": "65b4f2d3522993ea82f696692cb5eda1e8732b8711de4162e17bf395a5712baf",
+      "layer18_gelu.sv": "65ce0e652489b8eab47939ce37d2f5dbb8a2e785eb5eb1b7543675c8e127b3ae",
+      "layer18_proj.sv": "8458e38353b8bd8c3b0c587101aa5debf35bb621b0a081a3f1051035d098c4d6",
+      "layer18_qkv.sv": "8702c1d6fee1fda3bdef3c9344753e83fb581ec60f47253080b6a5749e2ed912",
+      "layer19_ffwd1.sv": "b92f198c8433d9eee47f14686463e5e49a1279e81f9d2a65098bd952c125a7b7",
+      "layer19_ffwd2.sv": "4a351d17cc079f30adeddd788a0218fc27b95c6daea47df6734b195482ee2cd5",
+      "layer19_gelu.sv": "219677e8ecdab79fe8bdf3f9fed021095645f0e9caca113f641dd133e01f6dad",
+      "layer19_proj.sv": "db63d3c9164a9a03a3fd3e8a0c330c2fcac3af3cf913122d4beb8b4af3693fe4",
+      "layer19_qkv.sv": "549fe336a4d8cfca124f1affe21a3828b9507fd392adb2a3d8a0f28338596dfd",
+      "layer1_ffwd1.sv": "6f99abd2ba955fd1951db8e5e29cc587f95c9f64a6fe085a952f50fdcf6d8f56",
+      "layer1_ffwd2.sv": "11e1919f5a53fcd191363e3caa4f4e0e6a1267128b0cedc7fb489f6822fa0d61",
+      "layer1_gelu.sv": "16ca2781601d3360ccf9a858fea8b87a13a41184e318527c05f39c9dc2643924",
+      "layer1_proj.sv": "31b257f56eb19c516cdf5bc66eae6ef7a6137b480d8d473efbb3df7679e2a35a",
+      "layer1_qkv.sv": "1cb6cdf575a17470ec1251d3d2b287eba5072e28f8bbc085e78f3ff50025b6f0",
+      "layer20_ffwd1.sv": "045729d16b0559365d7142f2215bb11345bcd4e94c766d9c24e6feec20dc0255",
+      "layer20_ffwd2.sv": "729e8840f82229f3a2d26fb366352a698ab8f480d4326861dff1199e0ff393e6",
+      "layer20_gelu.sv": "05c71c8c8c8228b86308cab3c817bada263a6829cd0aff571c953709c276513b",
+      "layer20_proj.sv": "034c4fd2f7b96feb4a7a5abf09f26ef513d03e167d336fd3905e1ad3d57e618d",
+      "layer20_qkv.sv": "0c61bccb2efd104ef6a034e06f005bdb1835112717d67f302657ea9648504fe2",
+      "layer21_ffwd1.sv": "0de4bb5f10443f2eff433ba2bfe8f309d82787f5af469d9be3fd1cbfc4c3b11f",
+      "layer21_ffwd2.sv": "65ff1d347f3d5e85aebd84ff93a83b45f33d719f555ebe3948e4b221219f9b06",
+      "layer21_gelu.sv": "7617ee75380f4c3979b5affb051bcffad3092f1de9692a15192ab347d91e60a3",
+      "layer21_proj.sv": "3ab717eb909d5580fbe6d2a56cf605813bfb2ce42ed1d5dd60dd0144c0fe9041",
+      "layer21_qkv.sv": "d74ccc8107625c6961f5d7327d287cf95ec46971c4f5ca0f14ea57e4a8132307",
+      "layer22_ffwd1.sv": "f3e7d4faecf9a10c71e23df9cd81f9aaf1a7c9c561833a1ddd7f5b672ff9db05",
+      "layer22_ffwd2.sv": "4e573da24f939a03d98fd7e089d8a28f596bb9910b7c4ec2a175f15a55080155",
+      "layer22_gelu.sv": "b3b691e00a76f4589b208911472774480c358de1b2eba5d53154962e912a21e4",
+      "layer22_proj.sv": "f13cb5c470e210d2de624f980aa997d009eb6a22ee6fd69336c751ff06bee8a3",
+      "layer22_qkv.sv": "f8c3bfe0c3493720ffc0936e8b8ac71111c5309d9313f55f9b05b8c7f7645c23",
+      "layer23_ffwd1.sv": "c1cca3d0ea69bdec1e4774695035dfd119f6f4d8fc81f12dd09d0fe36d6c2f3d",
+      "layer23_ffwd2.sv": "12f2847b1134e3213d5e2260225239f316c4328b9ebf032607304f1c17cc8604",
+      "layer23_gelu.sv": "7781b2d2f565ab0f046efb4698ac6381e71e7357c948946608c010d3e04d68d5",
+      "layer23_proj.sv": "477149e77e6a0f69ecc77824ff12f665bbcdfb374493849d8a60dfec54431e41",
+      "layer23_qkv.sv": "10c0686c6919c95507f5041e5be0172813b58a4f9ff589753a83385253a3555e",
+      "layer24_ffwd1.sv": "dc0634895715c3fc43d67763392a2b3ae9a12cf24c35ce5f5b1ca1a0053df53a",
+      "layer24_ffwd2.sv": "7a1b247a680d4be3142b4cfda738a2dd62d9a3c2f4c0fb9804bfbff43fb07c3a",
+      "layer24_gelu.sv": "ec4c0a51b3c527d8f9b418bfc44b5ca14a60202aca769f96671afce1afaa8826",
+      "layer24_proj.sv": "9654c484d04067cf89de8bbb1f059281a8b0b4af91626f573384b37e47db26f8",
+      "layer24_qkv.sv": "95fd4e45f7ac9f7035492547e7e09aa798676cdc4a015adaecc78268e2b446f7",
+      "layer25_ffwd1.sv": "067e0e189c54777b35f5bf7be04b4067d164cfa15447f5cacd9bbcbe25c06508",
+      "layer25_ffwd2.sv": "745fb12cd4f324fdecb4504cc9529e759ebc754907890878fa5c7485bac2f3ff",
+      "layer25_gelu.sv": "9709a973cb80e900ed44f1aa33905ffb1cf9c0c8297e069c9d52cc5c464d589e",
+      "layer25_proj.sv": "d41e843eaf4f20836b810ddedec363e2a32b5eb190e94712287b7ccb6ab9eff6",
+      "layer25_qkv.sv": "aa2c6348b420e2aacca7164ae098f59f8fa92b5a5e37c73297f4b1d68d0af249",
+      "layer26_ffwd1.sv": "5aa672c4968797ca0021e6ebd338ebb025ea7079769b1e91f8b1f14c817551d4",
+      "layer26_ffwd2.sv": "2bc11df50e6518d02b5b238766ef00f236257d8c87127413fa34906334fd0196",
+      "layer26_gelu.sv": "b1dbd18fe5ea7d5213d7ad91b00d9caf2fc9926dadf6d7aad0fe32b911e97cd8",
+      "layer26_proj.sv": "80cb58495220f12573cbd6f6d76fefac38fa7191ab2b994c9d6deca9bb76ec0a",
+      "layer26_qkv.sv": "e3195dd11603ea871c4ce0fea04f7597c1d7869c04206aba1e8c24af7ee804fa",
+      "layer27_ffwd1.sv": "29ad3b5208ad8de1e70a094eaedf374c3f7649c583d34da050585a30fea439ea",
+      "layer27_ffwd2.sv": "600b88d596adf4ec00d693b58aa928e693d0acb972d577ebadbfecbe5f427f6f",
+      "layer27_gelu.sv": "a8645b3a1aad815362cb0af9da44efe584498e0a3ee49992df9703eb26179250",
+      "layer27_proj.sv": "5dfc8c6e1023ba0f65f8783150aa08d8a0f21c0f9bf6975564016c90b4d229e1",
+      "layer27_qkv.sv": "1f01d63f981df3b88bad7ce052490a588cf7447d700c20953dbf4e259908abf5",
+      "layer28_ffwd1.sv": "550e9fbc8c0fe06c7689ef0129f6f310e777246886c37977827d1c08dea8fe20",
+      "layer28_ffwd2.sv": "a8607455fbdec6d6c43b7446e23ad7ceedee0e72e16ce3e3a587891c9359aebe",
+      "layer28_gelu.sv": "e0ab6c14bdf6659ec34a33706646d5860bfa37e18d9dd9d0036164aa06dfd30a",
+      "layer28_proj.sv": "5baa01c46931e6e3e80332e170808b26e4b0d7cebd3cbe353ec62e63b3ab15f6",
+      "layer28_qkv.sv": "26dbd6cfda2fc1b3df6eb19d5593422b319145306acc4b148617506acfde05de",
+      "layer29_ffwd1.sv": "babd79dffb027c97e2d1a452e31cab8f1198b03a8afc3ab01d0e868d1e30ecdb",
+      "layer29_ffwd2.sv": "daab203678245c93fc794d7874ba3eae740bdcb4070ed43cec4ea72b0cb5111d",
+      "layer29_gelu.sv": "ba1c6524efb0f5d915a83f1f75854a32678219153d5222296b6644cc52f7b701",
+      "layer29_proj.sv": "b692341746683ffefdea28a1b47784cc5b65f5bc441a81a597ceec459e0ed4ed",
+      "layer29_qkv.sv": "66c761c12df1fc2760d24bfd13949fe8ff7ac14c7405047ed00ce32f2c0390e3",
+      "layer2_ffwd1.sv": "48ee7f31a2b66d40c62c2917d595bbf4f8cedc2b8911317ab406af6f76e6a6f2",
+      "layer2_ffwd2.sv": "8ab3676cd947a907040d2f62bca1c33387bdd477c2b02ef7467e7150372ecaca",
+      "layer2_gelu.sv": "406b937e37c668926c4c3fcebb0323b7462ba9464b4ed1dc7ac55dd7b0b79fed",
+      "layer2_proj.sv": "bd8b04786871116295c1879e6c341a0b6f81ae111df6a7d577533d550d406aed",
+      "layer2_qkv.sv": "faf7f525041f1fcead3701fa228de5cc6bad197ba3fbc0441d66ad57451065aa",
+      "layer3_ffwd1.sv": "5f029e6f2473791aaced8ce7700f1f451366f4b42b3fbfcb1b8b8a782426f247",
+      "layer3_ffwd2.sv": "14b6e45104af9c769fdebcc8766e3c1070258ac2ba1f552959b7e2c4c05e470d",
+      "layer3_gelu.sv": "76b432cc259dbc99f5f9b117580d892cea033b12e71b83c10adabdcf16113d24",
+      "layer3_proj.sv": "6e84d03bb999d90f23a8643691bdcf8f8c7a94b0638c77d5b7f43f91d4a2fa02",
+      "layer3_qkv.sv": "ddcaca988efdfed9f5695d004c62ad4c8920b5c2a482071e85292b49c81743a2",
+      "layer4_ffwd1.sv": "86228880799264acd2438a521e24e96ee2b2a9ff35a22b4ab17350fa56705678",
+      "layer4_ffwd2.sv": "01dd2a5400c6282ea4494b1790e70f92d10176f981f4d7a0be703ead01ca6846",
+      "layer4_gelu.sv": "826e7ca525581c3fe1265c63729f044f52e79f18fa73a1355613176357b064e3",
+      "layer4_proj.sv": "f1c6b17bced79c13d80ac549367bcc53b9fdd42c3b1e27a19e5bfe6f3b240814",
+      "layer4_qkv.sv": "685a1364928b47b7a014525e32695ea09dbb163d5277bb284710b9b5f05cf6b0",
+      "layer5_ffwd1.sv": "75665854a877d3c95c623746c24cf97b5048b5a2965f4d63517bda9f86a5ea19",
+      "layer5_ffwd2.sv": "79103ea1cb5d68c8bcc86764ad1e8e9e0e0cf028c31742fab4b3e3176bbae879",
+      "layer5_gelu.sv": "c4498204cb15b0e4a26896c0ccee84b46c152589994117430aeb0fecb1142e06",
+      "layer5_proj.sv": "0c11531dc1db2b778684009dabb7aa221067bc95e5c5655b8d19e0de7f480ac1",
+      "layer5_qkv.sv": "d2715c87c3734563ced0d6ac6a0eac4ddd75770439d52be4ec020680e57d69d4",
+      "layer6_ffwd1.sv": "9164157e4d0839f252f991c3da015f6733ee76e54f51e5408d8cc1af81ef028e",
+      "layer6_ffwd2.sv": "a27691655474300651be8f3798ac2c2311daf28e1f8e316625d4937ed67cda55",
+      "layer6_gelu.sv": "eda0b0815b6dedba202dfffcd71d3f2c1a67678bb6a051ee44e7a91ad72e08fe",
+      "layer6_proj.sv": "5c8c8ae7f1737fe50f99c12ff293d98049af4ce48f1da164101918c144be608c",
+      "layer6_qkv.sv": "92531421490bff409a780a3e344cc8dc0c481b920abd924dfacd02c63fa0c7f8",
+      "layer7_ffwd1.sv": "828b784ef6e6eab4218d7d8fba8b266cb187c3ad7688e5fba830387fadc7868f",
+      "layer7_ffwd2.sv": "15e368c4a9c2470b86dffc97d9544c4d2463b5757f007fbbdb3fbe3242e45935",
+      "layer7_gelu.sv": "532e29c5cc51de4f1d631f1d76e58e8a759d4b2037eba7688383358c555066ef",
+      "layer7_proj.sv": "4a493c007c2d3e1ab4e943580fa28659da0e4d4b387d18754e2a1719c2a79f1a",
+      "layer7_qkv.sv": "502b28b6f0a9b3ee1321574ecdb0fc5f117b512bc82343f025d5b5b7665e2beb",
+      "layer8_ffwd1.sv": "50870a1148ee8ee22354375ba573898d6d749946a7c02fab4bd5f555d2fe4c97",
+      "layer8_ffwd2.sv": "eb904eb8f8ff80e1a42411d2f94837a9037d0e1cc9c50787370d63c114d00f15",
+      "layer8_gelu.sv": "cdb90f38ed5b8da93d8ebe6b1be5fac378d24441a4c06f5f750d2f5b825f6b24",
+      "layer8_proj.sv": "1f99947cc118a5d7d74e4b698c36464836c656071c2e3ab01ebb68d79ca2eff7",
+      "layer8_qkv.sv": "0f0fac4fb61f79d0fdcf1390bc427ab1c92c6de5a1663932a1136702b7d0c8e1",
+      "layer9_ffwd1.sv": "b58c03931c1f670d36b5153aeb6ac4b4191268d4c91f669b11e487213b2e1b65",
+      "layer9_ffwd2.sv": "949a9da3e2d307d2213d90d5326aca6ff85dfe53619cd4c2a149156d687d6220",
+      "layer9_gelu.sv": "d14b061a29225bdd3b8825632f1dbcee431a2ed17395850ddfebf7ae4e2d626e",
+      "layer9_proj.sv": "1d8a9b15c0666239bd4415dd2df139d5aa6d47a4c3c892f8af6e8eee7bf050a7",
+      "layer9_qkv.sv": "15e4cb639a145f13a5816b9b4e0ae06a5328236ccb48b1ad202f0ea7b1e23614",
+      "layernorm.sv": "5f931d78c4fcf486f52e4a6d8d6fb57b7a3bdbb479e2a6c05ee0f1d5bbcf5492",
+      "lm_head.sv": "02d1f1f81e9969b760a65d0031c3624e3a9bd649116a144434562da734acf541",
+      "model_control.sv": "292bb1ec75cb67c1522e7ba32e90b1ac9ff9f40c26fa6375271af0883bdb1fdf",
+      "model_top.sv": "c4819b10c0b0a63c90e835e304158362ca20d471cf5620437467cfba568c55ed",
+      "normalise_wide.sv": "6bc0289020fb200dbd1a3866248bca4488f6c59bf7bf6b5e8b6dd0de38d17de5",
+      "udiv.sv": "0238e5ef9bcf85594150393f24773420c0677a06e6350b0f8f15733fda042f43"
     },
-    "matrix_modules": [
+    "bits": 8,
+    "activation_bits": 16,
+    "residual_bits": 32,
+    "context": 8,
+    "vocab": 49152,
+    "width": 576,
+    "layers": 30,
+    "emitted_coefficients": 162791424,
+    "scope": "full_model",
+    "calibration_sha256": "03d69bd84c9710617e62be11c36cec7e17fe4d55501a39cb96dc6ed164a95154",
+    "coefficient_audit": {
+      "scope": "emitted coefficient arithmetic, not a full simulation",
+      "passed": true,
+      "matrices": {
+        "layer0_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 49218,
+          "passed": true
+        },
+        "layer0_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 67748,
+          "passed": true
+        },
+        "layer0_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 107756,
+          "passed": true
+        },
+        "layer0_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 223867,
+          "passed": true
+        },
+        "layer1_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 81494,
+          "passed": true
+        },
+        "layer1_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 83320,
+          "passed": true
+        },
+        "layer1_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 104467,
+          "passed": true
+        },
+        "layer1_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 228458,
+          "passed": true
+        },
+        "layer2_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 86617,
+          "passed": true
+        },
+        "layer2_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 84688,
+          "passed": true
+        },
+        "layer2_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 104840,
+          "passed": true
+        },
+        "layer2_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 224935,
+          "passed": true
+        },
+        "layer3_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 89833,
+          "passed": true
+        },
+        "layer3_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 87475,
+          "passed": true
+        },
+        "layer3_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 108326,
+          "passed": true
+        },
+        "layer3_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 227593,
+          "passed": true
+        },
+        "layer4_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 91966,
+          "passed": true
+        },
+        "layer4_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 87936,
+          "passed": true
+        },
+        "layer4_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 109784,
+          "passed": true
+        },
+        "layer4_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 226154,
+          "passed": true
+        },
+        "layer5_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 91593,
+          "passed": true
+        },
+        "layer5_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 82782,
+          "passed": true
+        },
+        "layer5_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 110643,
+          "passed": true
+        },
+        "layer5_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 226685,
+          "passed": true
+        },
+        "layer6_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 89842,
+          "passed": true
+        },
+        "layer6_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 88986,
+          "passed": true
+        },
+        "layer6_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 112769,
+          "passed": true
+        },
+        "layer6_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 225436,
+          "passed": true
+        },
+        "layer7_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 92696,
+          "passed": true
+        },
+        "layer7_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 82463,
+          "passed": true
+        },
+        "layer7_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 113389,
+          "passed": true
+        },
+        "layer7_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 223791,
+          "passed": true
+        },
+        "layer8_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 91952,
+          "passed": true
+        },
+        "layer8_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 85467,
+          "passed": true
+        },
+        "layer8_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 113370,
+          "passed": true
+        },
+        "layer8_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 220405,
+          "passed": true
+        },
+        "layer9_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 92888,
+          "passed": true
+        },
+        "layer9_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 85519,
+          "passed": true
+        },
+        "layer9_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 111979,
+          "passed": true
+        },
+        "layer9_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 216051,
+          "passed": true
+        },
+        "layer10_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 92261,
+          "passed": true
+        },
+        "layer10_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 86431,
+          "passed": true
+        },
+        "layer10_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 109443,
+          "passed": true
+        },
+        "layer10_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 214426,
+          "passed": true
+        },
+        "layer11_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 90321,
+          "passed": true
+        },
+        "layer11_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 82995,
+          "passed": true
+        },
+        "layer11_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 106245,
+          "passed": true
+        },
+        "layer11_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 211717,
+          "passed": true
+        },
+        "layer12_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 82179,
+          "passed": true
+        },
+        "layer12_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 87518,
+          "passed": true
+        },
+        "layer12_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 104556,
+          "passed": true
+        },
+        "layer12_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 209663,
+          "passed": true
+        },
+        "layer13_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 81645,
+          "passed": true
+        },
+        "layer13_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 85927,
+          "passed": true
+        },
+        "layer13_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 101834,
+          "passed": true
+        },
+        "layer13_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 210422,
+          "passed": true
+        },
+        "layer14_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 80256,
+          "passed": true
+        },
+        "layer14_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 85435,
+          "passed": true
+        },
+        "layer14_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 103176,
+          "passed": true
+        },
+        "layer14_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 203396,
+          "passed": true
+        },
+        "layer15_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 81923,
+          "passed": true
+        },
+        "layer15_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 84628,
+          "passed": true
+        },
+        "layer15_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 104206,
+          "passed": true
+        },
+        "layer15_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 202342,
+          "passed": true
+        },
+        "layer16_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 78273,
+          "passed": true
+        },
+        "layer16_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 85368,
+          "passed": true
+        },
+        "layer16_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 106036,
+          "passed": true
+        },
+        "layer16_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 209311,
+          "passed": true
+        },
+        "layer17_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 81477,
+          "passed": true
+        },
+        "layer17_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 81010,
+          "passed": true
+        },
+        "layer17_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 108258,
+          "passed": true
+        },
+        "layer17_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 212249,
+          "passed": true
+        },
+        "layer18_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 84649,
+          "passed": true
+        },
+        "layer18_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 82695,
+          "passed": true
+        },
+        "layer18_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 110611,
+          "passed": true
+        },
+        "layer18_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 211398,
+          "passed": true
+        },
+        "layer19_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 84937,
+          "passed": true
+        },
+        "layer19_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 78604,
+          "passed": true
+        },
+        "layer19_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 114565,
+          "passed": true
+        },
+        "layer19_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 212242,
+          "passed": true
+        },
+        "layer20_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 87280,
+          "passed": true
+        },
+        "layer20_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 86771,
+          "passed": true
+        },
+        "layer20_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 118671,
+          "passed": true
+        },
+        "layer20_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 213228,
+          "passed": true
+        },
+        "layer21_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 90742,
+          "passed": true
+        },
+        "layer21_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 85689,
+          "passed": true
+        },
+        "layer21_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 120053,
+          "passed": true
+        },
+        "layer21_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 214644,
+          "passed": true
+        },
+        "layer22_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 90208,
+          "passed": true
+        },
+        "layer22_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 87224,
+          "passed": true
+        },
+        "layer22_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 120542,
+          "passed": true
+        },
+        "layer22_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 217911,
+          "passed": true
+        },
+        "layer23_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 87858,
+          "passed": true
+        },
+        "layer23_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 82033,
+          "passed": true
+        },
+        "layer23_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 120548,
+          "passed": true
+        },
+        "layer23_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 221781,
+          "passed": true
+        },
+        "layer24_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 89138,
+          "passed": true
+        },
+        "layer24_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 84477,
+          "passed": true
+        },
+        "layer24_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 121386,
+          "passed": true
+        },
+        "layer24_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 222073,
+          "passed": true
+        },
+        "layer25_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 95944,
+          "passed": true
+        },
+        "layer25_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 84946,
+          "passed": true
+        },
+        "layer25_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 121692,
+          "passed": true
+        },
+        "layer25_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 229128,
+          "passed": true
+        },
+        "layer26_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 90535,
+          "passed": true
+        },
+        "layer26_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 89522,
+          "passed": true
+        },
+        "layer26_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 122540,
+          "passed": true
+        },
+        "layer26_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 229036,
+          "passed": true
+        },
+        "layer27_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 92629,
+          "passed": true
+        },
+        "layer27_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 87293,
+          "passed": true
+        },
+        "layer27_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 122226,
+          "passed": true
+        },
+        "layer27_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 227151,
+          "passed": true
+        },
+        "layer28_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 89612,
+          "passed": true
+        },
+        "layer28_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 88182,
+          "passed": true
+        },
+        "layer28_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 122023,
+          "passed": true
+        },
+        "layer28_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 228648,
+          "passed": true
+        },
+        "layer29_qkv": {
+          "rows": 960,
+          "coefficients": 552960,
+          "products": 92106,
+          "passed": true
+        },
+        "layer29_proj": {
+          "rows": 576,
+          "coefficients": 331776,
+          "products": 88166,
+          "passed": true
+        },
+        "layer29_ffwd1": {
+          "rows": 3072,
+          "coefficients": 1769472,
+          "products": 118390,
+          "passed": true
+        },
+        "layer29_ffwd2": {
+          "rows": 576,
+          "coefficients": 884736,
+          "products": 219138,
+          "passed": true
+        },
+        "lm_head": {
+          "rows": 49152,
+          "coefficients": 28311552,
+          "products": 28900,
+          "passed": true
+        }
+      },
+      "embeddings": {
+        "token_rows": 49152,
+        "position_rows": 8,
+        "passed": true
+      },
+      "matrix_coefficients": 134479872
+    },
+    "upstream_reference": {
+      "passed": true,
+      "upstream_dtype": "float32",
+      "absolute_tolerance": 0.0005,
+      "relative_tolerance": 0.0002,
+      "sequences": 4,
+      "logits_compared": 1523712,
+      "max_abs_error": 0.0003927137977619566,
+      "checkpoint_sha256": {
+        "config.json": "1d556eab73b69c7f11f64c557a2f9c6f440bd4c6b89bb2584a6b498c92603843",
+        "model.safetensors": "80521b40281d6ce74e35c9282c22539e75aa0ac8578892b2a59955ef78d55da1"
+      },
+      "transformers": "4.57.6"
+    },
+    "evaluation": {
+      "sequences": 4,
+      "predicted_tokens": 27,
+      "float_perplexity": 25.066032830545122,
+      "integer_perplexity": 35.46157412724421,
+      "positions": 31,
+      "argmax_agreement": 0.8064516129032258,
+      "max_abs_logit_error": 13.584965147369132,
+      "mean_abs_logit_error": 0.8306355238069858,
+      "evaluation_tokens": [
+        [
+          504,
+          6783,
+          314,
+          6178,
+          281,
+          260,
+          3163,
+          6376
+        ],
+        [
+          8113,
+          6572,
+          260,
+          6644,
+          284,
+          13197,
+          618,
+          260
+        ],
+        [
+          49,
+          3187,
+          8759,
+          26787,
+          897,
+          713,
+          30
+        ],
+        [
+          788,
+          253,
+          6926,
+          28,
+          6247,
+          2827,
+          1683,
+          13590
+        ]
+      ],
+      "checkpoint_sha256": {
+        "config.json": "1d556eab73b69c7f11f64c557a2f9c6f440bd4c6b89bb2584a6b498c92603843",
+        "model.safetensors": "80521b40281d6ce74e35c9282c22539e75aa0ac8578892b2a59955ef78d55da1"
+      }
+    },
+    "verified_source": {
+      "model": "HuggingFaceTB/SmolLM2-135M",
+      "revision": "93efa2f097d58c2a74874c7e644dbc9b0cee75a2"
+    },
+    "verification": [
       {
-        "module": "layer0_k_proj",
+        "passed": true,
         "inputs": 576,
-        "outputs": 192,
-        "coefficients": 110592,
-        "nonzero": 20491,
-        "constant_products": 1740,
-        "csd_add_sub_terms": 2061,
-        "weight_storage": "constant_logic",
-        "output_bits": 32,
-        "source_tensor": "model.layers.0.self_attn.k_proj.weight"
+        "outputs": 960,
+        "vectors": 6,
+        "logits_compared": 5760,
+        "simulator": "Verilator"
       }
     ],
     "synthesis": {
       "passed": true,
       "violations": [],
+      "matrix_cells": {
+        "layer0_qkv": 465163
+      },
+      "mutable_memories": [
+        {
+          "module": "layer0_qkv",
+          "cell": "x",
+          "write_ports": 577,
+          "bits": 9216
+        }
+      ],
+      "mutable_memory_bits": 9216,
       "yosys": "Yosys 0.68+136 (git sha1 c30457480-dirty, Release, Clang /usr/local/osxcross/target/bin/aarch64-apple-darwin25.5-clang++ 21.1.8)",
-      "mutable_memory_bits": 4608
+      "scope": "selected_matrix",
+      "top": "layer0_qkv"
     },
-    "fixed_matrices_audited": 1,
-    "verification": {
-      "passed": true,
-      "inputs": 576,
-      "outputs": 192,
-      "vectors": 6,
-      "logits_compared": 1152,
-      "simulator": "Verilator"
-    }
+    "limitation": "Complete RTL emitted and coefficients audited; only layer0_qkv simulated and synthesis-audited. No full-model RTL simulation or physical implementation."
   }
 }

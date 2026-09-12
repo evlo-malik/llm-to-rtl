@@ -1,47 +1,93 @@
-# Verification
+# Measured results
 
-Recorded 12 September 2026; [machine-readable results](results.json).
+Recorded 12 September 2026. [Reports and hashes](results.json).
+[Clean Ubuntu CI: 54 tests passed](https://github.com/evlo-malik/llm-to-rtl/actions/runs/34705279353).
 
-| Check | Result |
-|---|---|
-| Compiler and RTL regression | 25 passed |
-| Complete pretrained GPT-2, INT8, context 8 | 402,056 logits exact in each simulator |
-| GPT-2 fixed-matrix synthesis audit | 9 modules passed |
-| SmolLM2 key projection, 192 × 576, INT4 | 6 vectors / 1,152 outputs exact; audit passed |
-| Held-out GPT-2 float vs integer comparison | Same argmax at 31/31 positions; maximum logit error 0.00422 |
+| Check | Stories260K | SmolLM2-135M |
+|---|---|---|
+| Complete circuit emitted | 292,096 fixed coefficients; context 64 | 162,791,424 fixed coefficients; context 8 |
+| Emitted coefficient audit | All 21 matrices and embeddings passed | All 121 matrices and embeddings passed |
+| RTL simulation | 32,768 logits / 64 positions in Verilator; 4,096 / 8 in Icarus | First QKV projection: 6 vectors, 5,760 outputs in Verilator |
+| Synthesis and weight-storage audit | Complete model passed | First QKV projection passed |
 
-The tiny GPT-2 checkpoint is a verification fixture. These checks do not establish
-language quality. Its RTL took 101,200–101,312 cycles per token, including serial
-logit readout. No clock frequency or tokens/second is claimed.
+SmolLM2 emission includes all 30 layers and the full 49,152-token vocabulary.
+The coefficient audit reconstructs constants from emitted arithmetic and checks
+embedding literals. It does not replace full-model simulation. No full SmolLM2
+RTL simulation, full-model cell mapping or physical implementation is claimed.
+Fixed coefficient counts include separate embedding and output-head circuits,
+even when the checkpoint ties their weights.
 
-Commands below use the pinned example fetched by `scripts/fetch_example.py`.
-The checked-in JSON records checkpoint and generated-RTL hashes. Build products
-and downloaded weights stay outside Git.
+Stories260K generated this text in RTL simulation:
+
+> Once upon a time, there was a little girl named Lily. She loved to play outside
+> in the park. One day, she went to the park to play. She saw a big, red ball.
+> The ball was very scared
+
+Every output score matched the integer reference. The full-context run also
+checked context exhaustion and clearing state both during and after inference.
+Non-power-of-two vocabulary fixtures test invalid token IDs. Simulation wall time
+is not hardware throughput; no clock frequency or tokens/second is claimed.
+
+## Numerical accuracy
+
+The floating-point adapters passed comparisons with upstream Transformers for
+both pretrained checkpoints. Separate held-out checks compare the quantised
+reference with floating-point inference:
+
+| Model | Positions | Same next-token choice | Float perplexity | Integer perplexity |
+|---|---:|---:|---:|---:|
+| Stories260K | 179 | 169 / 179 | 4.36 | 4.48 |
+| SmolLM2-135M | 31 | 25 / 31 | 25.07 | 35.46 |
+
+These are four short sequences per model, not language-quality benchmarks.
+Perplexity measures prediction error; lower is better. SmolLM2 loses measurable
+accuracy under this quantisation scheme. It uses 16-bit normalised/feedforward
+activations and 32-bit residuals; Stories uses 8-bit and 16-bit respectively.
+RTL matching the integer reference does not mean matching the original model's
+floating-point outputs.
+
+## Area
+
+The [64×64 pretrained matrix study](area.md) measured programmable/fixed mapped
+cell-area ratios of 6.22× at INT8, 6.20× at INT4 and 6.68× for ternary weights.
+Both circuits use the same parallelism and input/output protocol. This is a
+cell-library mapping result for one matrix, not full-model area or a comparison
+against an optimised time-shared accelerator.
+
+## Reproduce
+
+Install the dependencies in [setup](setup.md). Output directories must be new.
+Downloaded weights and generated RTL stay outside Git.
 
 ```sh
-source env.sh
+python scripts/fetch_stories.py
+python compiler/compile.py models/stories260k --out gen/stories --context 64
+python scripts/generate.py gen/stories --model-dir models/stories260k \
+  --prompt '' --new-tokens 64
+python scripts/verify.py gen/stories --sim icarus --steps 8
+python scripts/audit_coefficients.py gen/stories
+python scripts/evaluate.py models/stories260k gen/stories
+python syn/synth.py gen/stories
+```
+
+The larger example emits about 2.9 GiB of RTL:
+
+```sh
+python scripts/fetch_model.py HuggingFaceTB/SmolLM2-135M \
+  --revision 93efa2f097d58c2a74874c7e644dbc9b0cee75a2 \
+  --out models/smollm2-135m
+python compiler/compile.py models/smollm2-135m --out gen/smol \
+  --context 8 --max-coefficients 0
+python scripts/audit_coefficients.py gen/smol
+python scripts/verify_matrix.py gen/smol --module layer0_qkv --sim verilator
+python syn/synth.py gen/smol --module layer0_qkv
+python scripts/evaluate.py models/smollm2-135m gen/smol
+```
+
+The regression also checks GPT-2, Qwen2 and Mistral fixtures, rotary position
+variants, grouped-query and sliding-window attention, arithmetic extremes,
+checkpoint validation and malformed coefficient rejection:
+
+```sh
 python -m pytest tests -q
-python compiler/compile.py models/tiny-gpt2 --out gen/gpt2 --context 8
-python scripts/verify.py gen/gpt2 --sim icarus
-python scripts/verify.py gen/gpt2 --sim verilator
-python scripts/evaluate.py models/tiny-gpt2 gen/gpt2
-python syn/synth.py gen/gpt2
 ```
-
-The full-model test compares every logit against an integer reference over eight
-positions, then checks invalid inputs, context exhaustion and reset during work.
-Compiler tests also exercise INT4 and ternary complete circuits, checkpoint
-validation, deterministic generation and agreement with upstream GPT-2 software.
-
-A separate pretrained SmolLM2-135M key projection exercises a larger matrix:
-
-```sh
-python compiler/compile.py models/smollm2-135m --out gen/key \
-  --matrices-only --only layer0_k_proj --bits 4
-python scripts/verify_matrix.py gen/key --sim verilator
-python syn/synth.py gen/key
-```
-
-This is one matrix, not a complete SmolLM2 inference test. The synthesis audit
-checks the lowered circuit for read-only memories and runtime multipliers in
-fixed linear maps. It is not cell-library mapping or physical implementation.

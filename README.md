@@ -23,6 +23,15 @@ All 32,768 logits over 64 token positions matched the integer reference. Icarus
 independently checked eight positions. The complete circuit passed synthesis and
 the weight-storage audit. [Results and reproduction commands](docs/results.md).
 
+The larger SmolLM2-135M checkpoint produced a complete circuit description with
+162.8 million fixed coefficients. Every emitted coefficient was audited; one
+projection was simulated and synthesis-audited. Full-model SmolLM2 RTL simulation
+and physical implementation have not been completed.
+
+A matched 64×64 matrix study measured **6.22× lower mapped cell area at INT8**
+than a programmable parallel datapath. See [area measurements](docs/area.md) for
+the baseline and limits. The compiler and RTL regression has 54 passing tests.
+
 ## Run a pretrained model
 
 Install Python 3.13 and the [EDA tools](docs/setup.md), then:
@@ -91,7 +100,7 @@ million coefficients. `--max-coefficients 0` removes that guard, not physical li
 
 The repository verifies RTL and supports logic synthesis. FPGA integration,
 place-and-route, timing closure and power measurement remain hardware work.
-Your original programmable systolic array is retained as a reference; emitted
+The original programmable systolic array is retained as a reference; emitted
 models do not instantiate it. Downloaded models, generated circuits and
 `open-source/` are ignored by Git.
 
