@@ -9,7 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 @pytest.mark.parametrize("sim", ["icarus", "verilator"])
 @pytest.mark.parametrize(
-    "shape,scaled", [((1, 1), False), ((7, 5), False), ((35, 9), True)]
+    "shape,scaled",
+    [((1, 1), False), ((7, 5), False), ((35, 9), True), ((259, 3), False)],
 )
 def test_fixed_rtl(tmp_path, monkeypatch, sim, shape, scaled):
     rng = np.random.default_rng(17)

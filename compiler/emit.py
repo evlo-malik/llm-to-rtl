@@ -126,13 +126,23 @@ def emit_linear(path, name, weights, bias=None, m0=None, shifts=None, out_bits=3
             ]
         else:
             lines += [f"    wire signed [31:0] y{j} = a{j};"]
-    # Separate result words avoid a million-bit packed bus in large vocabularies.
-    # These wires carry computed activations, never fetched coefficients.
-    lines += [f"    wire [31:0] results [0:{n - 1}];"]
-    for j in range(n):
-        lines += [f"    assign results[{j}] = y{j};"]
+    # Bound mux fan-in for large vocabularies. These are computed results;
+    # all coefficient arithmetic is upstream of the selector.
+    bank_size = 256
+    banks = (n + bank_size - 1) // bank_size
+    lines += [f"    wire [31:0] bank_result [0:{banks - 1}];"]
+    for bank in range(banks):
+        length = min(bank_size, n - bank * bank_size)
+        lines += [f"    wire [31:0] results_{bank} [0:{length - 1}];"]
+        for offset in range(length):
+            lines += [
+                f"    assign results_{bank}[{offset}] = y{bank * bank_size + offset};"
+            ]
+        index = "(count & 32'd255)" if banks > 1 else "count"
+        lines += [f"    assign bank_result[{bank}] = results_{bank}[{index}];"]
+    selected = "bank_result[count >> 8]" if banks > 1 else "bank_result[0]"
     lines += [
-        "    wire [31:0] selected = results[count];",
+        f"    wire [31:0] selected = {selected};",
         "    always_ff @(posedge clk) begin",
         "        if (!rst_n) begin",
         "            count <= 0; draining <= 0; out_valid <= 0; out_data <= 0;",
